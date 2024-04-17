@@ -21,6 +21,22 @@ import pickle
 class EquityDataLoader:
     """
     Class to Load Historical Prices of Equities (tickers) from Yahoo Finance API. Calculates Returns 
+
+    Parameters
+    ----------
+    
+    tickers : List[str]
+        List of Ticker Symbols
+    
+    start : str
+        Earliest date for asset historical prices (open, close, high, low) 
+    
+    end : str
+        Latest date for asset historical prices (open, close, high, low)
+    
+    interval : str
+        frequency of historical data
+
     """
 
     def __init__(self, tickers, start=EQ_START_DATE, end=EQ_END_DATE, interval=INTERVAL):
@@ -32,6 +48,18 @@ class EquityDataLoader:
     def get_history(self, price_type):
         """
         Get Historical Prices (Open/Close)
+
+        Parameters
+        ----------
+
+        price_type: str
+            asset prices : "Open", "Close", "High", "Low" 
+        
+        Returns
+        -------
+
+        data : pd.DataFrame
+            historical asset prices from Yahoo API
         """
 
         data = pd.DataFrame()
@@ -54,6 +82,18 @@ class EquityDataLoader:
     def process_timestamp(data):
         """
         Process Timestamp Data
+
+        Parameters
+        ----------
+        
+        data : pd.DataFrame
+            asset's historical data
+
+        Returns
+        --------
+        
+        data : pd.DataFrame
+            monthly data of asset returns across (start, end) years
         """
 
         data["Year"] = data.index.year.astype(str)
@@ -73,6 +113,19 @@ class EquityDataLoader:
     def get_returns(self, data):
         """
         Compute Returns
+
+        Parameters
+        ----------
+        
+        data : pd.DataFrame
+            Historical data of Asset Prices
+
+        Returns
+        --------
+
+        data : pd.DataFrame
+            post-processed data with monthly asset returns 
+
         """
         data = data.pct_change()
 
@@ -84,6 +137,12 @@ class EquityDataLoader:
 class FamaFrenchFactorDataLoader:
     """
     Class to collect Time Series Data of Factors from Kenneth French's Library
+
+    Parameters
+    ----------
+
+    start : str
+        Start date for extracting time-series data of Fama-French Factors (Mkt-RF, SMB, HML, RMW, CMA, Mom)
     """
 
     def __init__(self, start=FF_START_DATE):
@@ -92,6 +151,14 @@ class FamaFrenchFactorDataLoader:
     def get_factor_data(self, filenames):
         """
         Collects and Pre-Processes Factor Data
+
+        Parameters
+        ----------
+
+        filenames : str
+            File names with factor data
+
+            Fama-French Data : http://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html
         """
 
         factor_data = pd.DataFrame()
@@ -112,6 +179,33 @@ class FamaFrenchFactorDataLoader:
 def get_data(stock_tickers, market_ticker):
     """
     Function to collect Factor and Equity Data
+
+    Parameters
+    ----------
+
+    stock_tickers : List[str]
+        List of stock tickers to generate historical asset prices 
+    
+    market_ticker : str
+        Benchmark market index for comparing portfolio performance
+
+    Returns
+    --------
+
+    ff_data : pd.DataFrame
+        Time Series of Fama-French Factor data from library
+    
+    processed_open_data : pd.DataFrame
+        Open prices of assets (Monthly Interval)
+    
+    processed_close_data : pd.DataFrame
+        Closing prices of assets (Monthly Interval)
+    
+    stock_returns : pd.DataFrame
+        Historical returns of assets (Monthly Interval)
+    
+    spy_returns : pd.DataFrame
+        Historical returns of S&P 500 (Monthly Interval)
     """
 
     print("-" * 50 + "Loading Time Series of Factors" + "-" * 50)
@@ -156,6 +250,15 @@ def get_data(stock_tickers, market_ticker):
 class EarningsReportLoader:
     """
     Class to download Earnings Reports (Quarterly) from Yahoo Finance API
+
+    Parameters
+    ----------
+
+    tickers : List[str]
+        List of companies for which earnings reports are downloaded
+
+    from_file : boolean
+        Load earnings reports from saved pickle file
     """
     def __init__(self, tickers, from_file=True):
         self.tickers = tickers    
@@ -165,6 +268,15 @@ class EarningsReportLoader:
     def save_earnings_file(earnings_response, filename):
         """
         serialize earnings report
+
+        Parameters
+        ----------
+
+        earnings_response :  pd.DataFrame
+            Earnings Reports
+        
+        filename : str
+            Pickle filename
         """
         
         with open(filename, 'wb') as f:
@@ -175,6 +287,7 @@ class EarningsReportLoader:
         """
         Etract earnings report from Alpha Vantage API and serialize file
         """
+
         # Holds earnings data for each ticker
         earnings = {}
 
@@ -193,6 +306,7 @@ class EarningsReportLoader:
         """
         Post-Process Earnings Report for a given equity
         """
+
         df_ticker = pd.DataFrame(earnings_data[ticker]['quarterlyEarnings'])
         
         # Convert reported date which is only applicable to quarterly earnings from string
@@ -216,6 +330,12 @@ class EarningsReportLoader:
     def get_earniings_history(self):
         """
         Generate Earnings History (Yearly)
+
+        Returns
+        -------
+
+        df_quarterly1 : pd.DataFrame
+            Aggregated quarterly earnings reports of companies
         """
         
         # Create Response from AlphaVantage API 
