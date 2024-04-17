@@ -20,6 +20,9 @@ FF_FILENAMES = ["F-F_Research_Data_5_Factors_2x3", "F-F_Momentum_Factor"]
 # Fama-French Factors (6)
 FF_FACTORS = ['Mkt-RF','SMB','HML','RMW','CMA','Mom']
 
+# Factor Combinations
+FACTOR_COMBINATIONS = [[x] for x in FF_FACTORS] + [FF_FACTORS]
+
 # Risk-Free Rate Variable
 RF_COL = "RF"
 

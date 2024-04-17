@@ -14,18 +14,48 @@ from data_utils import get_data
 
 class FamaFrenchModel:
     """
-    Class to perform Regression Analysis using Fama French Factor Model
+    Fama French Factor Model using Rolling Regression
+
+    Parameters
+    ----------
+
+    stock : str
+        Stock Ticker Symbol
+
+    factors : List[str]
+        List of Fama-French Factors 
+
+    rf_col : str
+        risk-free rate column name from fama-french dataset
+    
+    window : int
+        Rolling window size for regression analysis
+    
+    rolling: boolean
+        Flag to perform rolling regression
+
     """
     def __init__(self, stock, factors, rf_col, window=60, rolling=False):
         self.stock = stock
         self.rf_col = rf_col
         self.factors = factors
+        self.factor_combinations = "_".join([x for x in factors])
         self.window = window
         self.rolling = rolling
     
     def fit(self, ff_data, asset_data):
         """
         Fitting the Fama-French model (Rolling Estimation and const. Coefficient Estimation)
+
+        parameters
+        ----------
+
+        ff_data : pd.DataFrame
+            Fama-French Dataset with time series of Factors used in the model
+
+        asset_data: pd.DataFrame
+            Historical Returns of a particular asset
+            
         """
         print("-" * 50 + "Fitting Fama-French Factor Model" + "-" * 50)
         
@@ -47,6 +77,7 @@ class FamaFrenchModel:
         """
         Summary statistics of Fitted Model
         """
+
         print("-" * 50 + "Generating Summary" + "-" * 50)
         return self.fitted_model.summary()
     
@@ -55,6 +86,7 @@ class FamaFrenchModel:
         """
         Partial Regression Plots of Each Factor
         """
+
         fig = plt.figure(figsize=(12, 8))
         sm.graphics.plot_partregress_grid(self.fitted_model, fig=fig)
         plt.savefig("Figures/Partial_Regression_Plots_" + self.stock + ".png")
@@ -64,6 +96,7 @@ class FamaFrenchModel:
         """
         Grouping Rolling Betas into Distinct Time Intervals
         """
+
         rolling_betas = self.fitted_model.params.copy()
         rolling_betas.dropna(inplace=True)
 
@@ -85,6 +118,7 @@ class FamaFrenchModel:
         """
         Compute Mean of Rolling Betas within each Grooup
         """
+
         rolling_betas = self.rolling_beta_groups()
         rolling_betas = rolling_betas.groupby("Group")[[self.rf_col] + self.factors].mean()
         
@@ -100,22 +134,29 @@ class FamaFrenchModel:
         rolling_betas.groupby(["Group"])[self.rf_col].hist(bins=100, density=True, legend=True)
         plt.ylabel(r"$\alpha_{}$".format({self.rf_col}))
         plt.title(r"{0} : $\alpha_{1}$".format(self.stock,{self.rf_col}))
-        plt.savefig(f"Figures/Alpha_{self.rf_col}_Histogram_{self.stock}.png")
+        plt.savefig(f"Figures/Alpha_{self.rf_col}_Histogram_{self.stock}_{self.factor_combinations}.png")
         plt.close()
 
-        nrows, ncols=3, 2
+        if len(self.factors) == 1:
+            nrows, ncols = 1, 1
+        else:
+            nrows, ncols=3, 2
         fig, axs  = plt.subplots(nrows=nrows, ncols=ncols, sharex='col', sharey='row')
         nrow = 0
         for i, factor in enumerate(self.factors):
             ncol = i % ncols
             if i % ncols == 0 and i > 0:
                 nrow += 1
+            if len(self.factors) == 1:
+                ax = axs
+            else:
+                ax = axs[nrow, ncol]
 
-            rolling_betas.groupby(["Group"])[factor].hist(bins=100, density=True, ax=axs[nrow][ncol], figsize=(10, 10), legend=True)
-            axs[nrow, ncol].set_ylabel(r"$\beta_{}$".format({factor}))
-            axs[nrow, ncol].set_title(r"{0} : $\beta_{1}$".format(self.stock,{factor}))
+            rolling_betas.groupby(["Group"])[factor].hist(bins=100, density=True, ax=ax, figsize=(10, 10), legend=True)
+            ax.set_ylabel(r"$\beta_{}$".format({factor}))
+            ax.set_title(r"{0} : $\beta_{1}$".format(self.stock,{factor}))
 
-        fig.savefig(f"Figures/Factor_Histogram_{self.stock}.png")
+        fig.savefig(f"Figures/Factor_Histogram_{self.stock}_{self.factor_combinations}.png")
 
         plt.close()
 
@@ -123,10 +164,11 @@ class FamaFrenchModel:
         """
         Rolling Estimate Plots of Factors
         """
+        
         print("-" * 50 + f"Rolling Estimates of Sensitivity Factors for {self.stock}" + "-" * 50)
         
         fig = self.fitted_model.plot_recursive_coefficient(variables=["const"] + self.factors, figsize=(20,30))
-        plt.savefig(f"Figures/Rolling_Estimates_{self.stock}.png")                
+        plt.savefig(f"Figures/Rolling_Estimates_{self.stock}_{self.factor_combinations}.png")                
         plt.close()
 
         print("-" * 50 + "Done!" + "-" * 50)
@@ -139,6 +181,7 @@ def famafrench_regression_analysis():
     """
     ff_data, _, _, stock_returns, _ = get_data(stock_tickers=STOCK_TICKERS, market_ticker=MARKET_TICKER)
 
+    
     for stock in STOCK_TICKERS:
         model = FamaFrenchModel(stock=stock, factors=FF_FACTORS, rf_col=RF_COL, window=WINDOW, rolling=ROLLING)
         model.fit(asset_data=stock_returns, ff_data=ff_data)
