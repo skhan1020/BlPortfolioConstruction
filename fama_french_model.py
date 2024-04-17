@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from config import (
     STOCK_TICKERS,
     MARKET_TICKER,
-    FF_FACTORS,
+    FACTOR_COMBINATIONS,
     RF_COL, 
     WINDOW, 
     ROLLING,
@@ -190,12 +190,12 @@ def famafrench_regression_analysis():
     """
     ff_data, _, _, stock_returns, _ = get_data(stock_tickers=STOCK_TICKERS, market_ticker=MARKET_TICKER)
 
-    
-    for stock in STOCK_TICKERS:
-        model = FamaFrenchModel(stock=stock, factors=FF_FACTORS, rf_col=RF_COL, window=WINDOW, rolling=ROLLING)
-        model.fit(asset_data=stock_returns, ff_data=ff_data)
-        model.plot_rolling_beta_groups()
-        model.plot_rolling_betas()
+    for factors in FACTOR_COMBINATIONS:
+        for stock in STOCK_TICKERS:
+            model = FamaFrenchModel(stock=stock, factors=factors, rf_col=RF_COL, window=WINDOW, rolling=ROLLING)
+            model.fit(asset_data=stock_returns, ff_data=ff_data)
+            model.plot_rolling_beta_groups()
+            model.plot_rolling_betas()
 
 
 if __name__ == "__main__":
