@@ -76,6 +76,10 @@ class FamaFrenchModel:
     def summary(self):
         """
         Summary statistics of Fitted Model
+
+        Returns
+        -------
+            Summary of fitted model
         """
 
         print("-" * 50 + "Generating Summary" + "-" * 50)
@@ -95,6 +99,11 @@ class FamaFrenchModel:
     def rolling_beta_groups(self):
         """
         Grouping Rolling Betas into Distinct Time Intervals
+
+        Returns
+        --------
+        rolling_betas : pd.DataFrame
+            rolling beta estimates of factors grouped into time intervals
         """
 
         rolling_betas = self.fitted_model.params.copy()
@@ -164,7 +173,7 @@ class FamaFrenchModel:
         """
         Rolling Estimate Plots of Factors
         """
-        
+
         print("-" * 50 + f"Rolling Estimates of Sensitivity Factors for {self.stock}" + "-" * 50)
         
         fig = self.fitted_model.plot_recursive_coefficient(variables=["const"] + self.factors, figsize=(20,30))
@@ -192,5 +201,5 @@ def famafrench_regression_analysis():
 if __name__ == "__main__":
 
 
-    # Perform Fama-French Regression Analysis (6 Factor FF Model)
+    # Perform Fama-French Regression Analysis (Single & 6 Factor FF Model)
     famafrench_regression_analysis()
