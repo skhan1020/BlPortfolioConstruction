@@ -4,87 +4,173 @@ import matplotlib.pyplot as plt
 from config import (
     STOCK_TICKERS,
     MARKET_TICKER,
-    FF_FACTORS,
+    FACTOR_COMBINATIONS,
     RF_COL, 
     WINDOW, 
     ROLLING,
     INITIAL_CAPITAL,
     TOPN,
-    STRATEGIES,
 )
 
 from data_utils import get_data
 from fama_french_model import FamaFrenchModel
 
-def get_factor(stocks, factors, stock_returns, ff_data, factor, rf_col=RF_COL, window=WINDOW, rolling=ROLLING):
+def get_alpha(stocks, factors, stock_returns, ff_data, rf_col=RF_COL, window=WINDOW, rolling=ROLLING):
     """
-    Extract Factor Values from Fama-French Model
-    """
-    if factor == "Alpha":
-        factor = "const"
+    Extract Alpha Values from Fama-French Model
 
-    factor_data = pd.DataFrame()
+    Parameters
+    ----------
+
+    stocks : List[str]
+        List of stock ticker symbols
+    
+    factors : List[str]
+        List of factors included in Fama-French Model
+    
+    stock_returns : pd.DataFrame
+        Historical returns of stocks
+    
+    ff_data : pd.DataFrame
+        Fama-French time series data 
+    
+    rf_col : str
+        Risk-free rate column name
+    
+    window : int
+        Size of window for rolling regression
+    
+    rolling : boolean
+        Flag for rolling regression
+    
+    Returns
+    -------
+
+    alpha_data : pd.DataFrame
+        Alpha values of all stocks from Fama-French model
+
+    """
+
+
+    alpha_data = pd.DataFrame()
     for stock in stocks:
     
-        print("-" * 50 + f"Calculate {factor} Coefficients for {stock} from Regression Analysis" + "-" * 50)
+        print("-" * 50 + f"Calculate Alpha : {stock} (Fama French Model)" + "-" * 50)
 
         model = FamaFrenchModel(stock=stock, factors=factors, rf_col=rf_col, window=window, rolling=rolling)
         model.fit(asset_data=stock_returns, ff_data=ff_data)
-        factor_df = model.params[[factor]].dropna()
-        factor_stock = pd.DataFrame(factor_df)
-        factor_stock.columns = [stock]
-        factor_data = pd.concat([factor_data, factor_stock], axis=1)
+        alpha_df = model.params[["const"]].dropna()
+        alpha_stock = pd.DataFrame(alpha_df)
+        alpha_stock.columns = [stock]
+        alpha_data = pd.concat([alpha_data, alpha_stock], axis=1)
 
         print("-" * 50 + "Done!" + "-" * 50)
 
-    return factor_data
+    return alpha_data
 
 
-def determine_trading_days(factor_df, open_df, close_df, market_df):
+def determine_trading_days(alpha_df, open_df, close_df, market_df):
     """
     Compute Trading Days for stocks and SPY
+
+    Parameters
+    ----------
+
+    alpha_df : pd.DataFrame
+        Alpha values obtained from Fama-French model
+    
+    open_df : pd.DataFrame
+        Historical open stock prices 
+    
+    close_df : pd.DataFrame
+        Historical closing stock prices
+    
+    market_df : pd.DataFrame
+        Historical SPY returns
+    
+    Returns
+    -------
+
+    alpha_df : pd.DataFrame
+        Alpha values on Trading Days
+    
+    open_df : pd.DataFrame
+        Open stock prices on Trading Days
+    
+    close_df : pd.DataFrame
+        Close stock prices on Trading Days
+    
+    market_df : pd.DataFrame
+        SPY returns on Trading Days
     """
-    factor_start_index = factor_df.index[0]
+    alpha_start_index = alpha_df.index[0]
     market_start_index = market_df.index[0]
 
     print("-" * 50 + "Determine Trading Days for Backtesting" + "-" * 50)
 
-    if factor_start_index < market_start_index:
-        factor_df = factor_df[factor_df.index.isin(market_df.index)]
+    if alpha_start_index < market_start_index:
+        alpha_df = alpha_df[alpha_df.index.isin(market_df.index)]
         open_df = open_df[open_df.index.isin(market_df.index)]
         close_df = close_df[close_df.index.isin(market_df.index)]
     else:
-        market_df = market_df[market_df.index.isin(factor_df.index)]
+        market_df = market_df[market_df.index.isin(alpha_df.index)]
     
     print("-" * 50 + "Done!" + "-" * 50)
 
-    return factor_df, open_df, close_df, market_df
+    return alpha_df, open_df, close_df, market_df
 
 
 
-class FactorTradingStrategy:
+class AlphaTradingStrategy:
     """
-    Class to implement a trading strategy and compute P&L, Sharpe Ratios, and Information Ratios 
-    by ranking ssets based on their factor values
+    Class to implement Alpha Trading Strategy and compute P&L, Sharpe Ratios, and Information Ratios 
+    by ranking assets based on their alpha coefficients
     
-    """
-    def __init__(self, strategy, ff_data, open_df, close_df, stock_returns, market_returns, initial_capital=INITIAL_CAPITAL, topn=TOPN, market_ticker=MARKET_TICKER):
+    Parameters
+    ----------
 
-        self.strategy = strategy
+    factor_combination : List[str]
+        List of factors used in Fama-French model
+    
+    ff_data : pd.DataFrame
+        Time series of Fama-French data
+
+    open_df : pd.DataFrame
+        Historical open stock prices 
+        
+    close_df : pd.DataFrame
+        Historical closing stock prices
+    
+    stock_returns : pd.DataFrame
+        Historical stock returns
+
+    market_returns : pd.DataFrame
+        Historical SPY/Benchmark market index returns
+    
+    initial_capital : int
+        Initial Capital used to backtest strategy
+    
+    topn : int
+        Top N stocks based on Alpha values
+    
+    market_ticker : str
+        Benchmark market index ticker (eg SPY)
+
+    """
+    def __init__(self, factor_combination, ff_data, open_df, close_df, stock_returns, market_returns, initial_capital=INITIAL_CAPITAL, topn=TOPN, market_ticker=MARKET_TICKER):
+
+        self.factor_combination = factor_combination
         self.initial_capital = initial_capital
         self.topn = topn
         self.market_ticker = market_ticker
 
-        self.factor_trading_data_list = list()
-        for idx, factor in enumerate(self.strategy):
-            factor_data = get_factor(stocks=STOCK_TICKERS, factors=FF_FACTORS, stock_returns=stock_returns.copy(deep=True), ff_data=ff_data.copy(deep=True), factor=factor)
-            if idx == len(strategy) -1 :
-                factor_trading_data, self.open_df, self.close_df, self.market_returns = determine_trading_days(factor_df=factor_data, open_df=open_df.copy(deep=True), close_df=close_df.copy(deep=True), market_df=market_returns.copy(deep=True))
-            else:
-                factor_trading_data, _, _, _ = determine_trading_days(factor_df=factor_data, open_df=open_df.copy(deep=True), close_df=close_df.copy(deep=True), market_df=market_returns.copy(deep=True))
-            
-            factor_trading_data.index = list(range(len(factor_trading_data)))
-            self.factor_trading_data_list.append(factor_trading_data)
+        #self.alpha_trading_data_list = list()
+
+        alpha_df = get_alpha(stocks=STOCK_TICKERS, factors=self.factor_combination, stock_returns=stock_returns.copy(deep=True), ff_data=ff_data.copy(deep=True))
+        self.alpha_trading_data, self.open_df, self.close_df, self.market_returns = determine_trading_days(alpha_df=alpha_df, open_df=open_df.copy(deep=True), close_df=close_df.copy(deep=True), market_df=market_returns.copy(deep=True))
+
+        self.alpha_trading_data.index = list(range(len(self.alpha_trading_data)))
+        #self.alpha_trading_data_list.append(alpha_trading_data)
 
         self.tickers = self.open_df.columns.tolist()
         self.trading_days = self.open_df.index
@@ -93,74 +179,44 @@ class FactorTradingStrategy:
         self.close_df.index = list(range(len(self.close_df)))
         
 
-    def holding_tickers(self, factor_data, topn):
+    def holding_tickers(self):
         """
-        Generate tickers to hold on a given trading day
+        Generate tickers to buy & hold on a given trading day based on alpha values
+
+        Returns
+        -------
+
+        alpha_sorted_df : pd.DataFrame
+            pandas dataframe of alpha values of stocks in portfolio
         """
+
         print("-" * 50 + "Rank Assets" + "-" * 50)
 
-        sorted_factors = factor_data.values.argsort(axis=1)
-        factor_sorted_df = pd.DataFrame(sorted_factors)
+        sorted_alpha = self.alpha_trading_data.values.argsort(axis=1)
+        alpha_sorted_df = pd.DataFrame(sorted_alpha)
         ticker_map = dict(zip(list(range(len(self.tickers))), self.tickers))
-        for col in factor_sorted_df.columns:
-            factor_sorted_df[col] = factor_sorted_df[col].map(ticker_map)
+        for col in alpha_sorted_df.columns:
+            alpha_sorted_df[col] = alpha_sorted_df[col].map(ticker_map)
 
-        factor_sorted_df.columns = ["Top " + str(i+1) for i in range(len(self.tickers))]
+        alpha_sorted_df.columns = ["Top " + str(i+1) for i in range(len(self.tickers))]
         
         print("-" * 50 + "Done!" + "-" * 50)
 
-        return factor_sorted_df.iloc[:, :topn]
-
-
-    def avg_rank_tickers_based_strategy(self):
-        """
-        Compute Average Rank of all equities based on the factors selected 
-        """
-        print("-" * 50 + f"Aggregate Ranking Based on Strategy : {'_'.join([x for x in self.strategy])}" + "-" * 50)
-
-        factor_data_list = list()
-        for factor_trading_data in self.factor_trading_data_list:
-            factor_data_list.append(self.holding_tickers(factor_data=factor_trading_data, topn= len(STOCK_TICKERS)))
-
-
-        def rank_tickers(df):
-
-            df_list = df.to_dict('records')
-
-            ranked_list = list()
-
-            for dict_item in df_list:
-                ranked_list.append({v: int(k.split()[1]) for k, v in dict_item.items()})
-            
-            ranked_factor_df = pd.DataFrame(ranked_list)
-            
-            return ranked_factor_df
-
-
-        list_data = factor_data_list[0]
-        dummy_list = [[0 for _ in range(len(list_data.columns))] for _ in range(len(list_data))]
-        col_names = sorted(list_data.loc[0].values)
-        rank_df = pd.DataFrame(dummy_list, columns=col_names)
-
-        for factor_df in factor_data_list:
-        
-            ranked_factor_df = rank_tickers(factor_df)
-            rank_df = rank_df.add(ranked_factor_df, fill_value=0)
-
-        avg_rank_df = rank_df / len(factor_data_list)
-        ranked_agg_factor_df = self.holding_tickers(factor_data=avg_rank_df, topn=self.topn)
-
-        print("-" * 50 + "Done!" + "-" * 50)
-        
-        return ranked_agg_factor_df, avg_rank_df
-
+        return alpha_sorted_df.iloc[:, :self.topn]
 
 
     def generate_signals(self):
         """
         Portfolio Rebalancing - Compute P&L using a multi-factor based strategy
+
+        Returns
+        -------
+
+        signal_data : pd.DataFrame
+            Portfolio holdings based on alpha trading strategy with Returns
         """
-        factor_sorted_df, _ = self.avg_rank_tickers_based_strategy()
+
+        alpha_sorted_df = self.holding_tickers()
 
         hold_assets, prev = list(), list()
 
@@ -168,7 +224,7 @@ class FactorTradingStrategy:
 
         print("-" * 50 + "Backtesting of Factors Based on Selected Strategy -- Compute Cumulatie Returns" + "-" * 50)
 
-        for index, topn_assets in enumerate(factor_sorted_df.values):
+        for index, topn_assets in enumerate(alpha_sorted_df.values):
             
             portfolio_holdings = self.close_df.loc[index, topn_assets].sum()
             portfolio_df = pd.DataFrame({"Portfolio Holdings": portfolio_holdings}, index=[index])
@@ -218,7 +274,20 @@ class FactorTradingStrategy:
             iii. Annual Volatilities
             iv. Sharpe Ratio
             v. Information Ratio
+        
+        Parameters
+        ----------
+        
+        signal_data : pd.DataFrame
+            Portfolio holdings based on alpha trading strategy with Returns
 
+        freq : int
+            Time period (monthly, annualised, etc) of returns
+
+        Returns
+        -------
+        
+        pandas dataframe with net profit, annual returns, annual volatility, sharpe ratio, and information ratio
         """
         cumulative_returns = signal_data["Portfolio Cumulative Returns"].tolist()[-1]
         annual_returns = signal_data["Portfolio Returns"].mean() * freq
@@ -236,9 +305,10 @@ class FactorTradingStrategy:
         """
         Plot of Cumulative Returns generated by Multi-Factor trading strategy and Market (SPY) returns
         """
-        strategy = '_'.join([x for x in self.strategy])
 
-        print("-" * 50 + f"Plot of Portfolio Cumulative Returns vs {self.market_ticker} Cumulative Returns for {strategy}" + "-" * 50)
+        factor_combination = '_'.join([x for x in self.factor_combination])
+
+        print("-" * 50 + f"Plot of Portfolio Cumulative Returns vs {self.market_ticker} Cumulative Returns for {factor_combination}" + "-" * 50)
 
         portfolio_cr = signal_data[["Portfolio Cumulative Returns"]]
         self.market_returns[f"{self.market_ticker} Cumulative Returns"] = (1 + self.market_returns[self.market_ticker]).cumprod() - 1
@@ -251,32 +321,48 @@ class FactorTradingStrategy:
         portfolio_market_returns.set_index("Date", inplace=True)
         
 
-        portfolio_market_returns.plot(kind='line', figsize=(10, 10),title=f"Backtesting {strategy} : Portfolio Cumulative Returns vs {self.market_ticker} Cumulative Returns")
+        portfolio_market_returns.plot(kind='line', figsize=(10, 10),title=f"Backtesting {factor_combination} : Portfolio Cumulative Returns vs {self.market_ticker} Cumulative Returns")
         plt.xlabel('Date')
         plt.ylabel('Cumulative Returns')
         plt.grid(True)
-        plt.savefig(f"Figures/Cumulative_Returns_{strategy}.png")
+        plt.savefig(f"Figures/Cumulative_Returns_{factor_combination}.png")
         plt.show()
         
 
-def backtest(strategies, ALL=False):
+def backtest(factor_combinations, ALL=False):
     """
     Function to backtest Factor Based Strategy with Market Returns
+    
+    Parameters
+    ----------
+
+    factor_combinations : List[str]
+        List of factors used in the Fama-French Model to evaluate Alpha Trading Strategy
+
+    ALL : boolean
+        Boolean flag to backtest all possible factor combinations
+    
+    Returns
+    -------
+
+    performance_dict : Dict[str, pd.DataFrame]
+        Dictionary of factor combination and performance metrics
     """
+
     ff_data, stock_open_data, stock_close_data, stock_returns, market_returns = get_data(stock_tickers=STOCK_TICKERS, market_ticker=MARKET_TICKER)
 
     performance_dict = dict()
 
 
-    for strategy in strategies:
-        factor_trading_strat = FactorTradingStrategy(strategy=strategy, ff_data=ff_data, open_df=stock_open_data, close_df=stock_close_data, stock_returns=stock_returns, market_returns=market_returns)
-        signal_data = factor_trading_strat.generate_signals()
+    for factor_combination in factor_combinations:
+        alpha_trading_strat = AlphaTradingStrategy(factor_combination=factor_combination, ff_data=ff_data, open_df=stock_open_data, close_df=stock_close_data, stock_returns=stock_returns, market_returns=market_returns)
+        signal_data = alpha_trading_strat.generate_signals()
 
         if not ALL:
-            factor_trading_strat.plot_cumulative_returns(signal_data=signal_data)
+            alpha_trading_strat.plot_cumulative_returns(signal_data=signal_data)
 
-        performance = factor_trading_strat.evalaute_strategy(signal_data=signal_data)
-        key = '_'.join([x for x in strategy])
+        performance = alpha_trading_strat.evalaute_strategy(signal_data=signal_data)
+        key = '_'.join([x for x in factor_combination])
         performance_dict.update({key: performance})
 
 
@@ -288,5 +374,5 @@ if __name__ == "__main__":
 
 
     # Backtest All Factors against S&P 500 Market Index Returns
-    performance = backtest(strategies=STRATEGIES)
+    performance = backtest(factor_combinations=FACTOR_COMBINATIONS)
     print(performance)
