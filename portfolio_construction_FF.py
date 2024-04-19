@@ -1,63 +1,83 @@
 from config import (
     STOCK_TICKERS,
     MARKET_TICKER,
-    ALL_STRATEGIES,
+    FACTOR_COMBINATIONS,
 )
 
 from data_utils import get_data
 from trading_strategy import (
-    FactorTradingStrategy,
+    AlphaTradingStrategy,
     backtest
 )
 
-def calc_optimal_strategy(metric):
+def calc_optimal_factors(metric):
     """
     Determine the optimal subset of factos that generate the optimal "Sharpe Ratio" or "Information Ratio"
+
+    Parameters
+    ----------
+
+    metric : str
+        Metric to determine Optimal Factor Set
+    
+    Returns
+    -------
+
+    optimal_factor_set: List[str]
+        List of optimal factors based on Alpha Trading Strategy
     """
 
-    all_performance = backtest(strategies=ALL_STRATEGIES, ALL=True)
+    all_performance = backtest(factor_combinations=FACTOR_COMBINATIONS, ALL=True)
    
-    strategy_dict = dict()
+    fc_dict = dict()
     for k, perf_df in all_performance.items():
-        strategy_dict.update({k: perf_df[metric].values[0]})
+        fc_dict.update({k: perf_df[metric].values[0]})
     
-    optimal_strategy = max(strategy_dict, key=strategy_dict.get)
+    optimal_factor_combination = max(fc_dict, key=fc_dict.get)
 
-    optimal_strategy1 = optimal_strategy.split("_")
+    optimal_factor_set = optimal_factor_combination.split("_")
 
-    return optimal_strategy1
+    return optimal_factor_set
 
 
-def portfolio_construction(optimal_strategy):
+def portfolio_construction(optimal_factor_combination, n_assets):
     """
     Function to construct portfolio based on optimal factor subset 
     Naive weight allocation based on ranks of the Top 5 stocks
+
+    Parameters
+    ----------
+
+    optimal_factor_combination : List[str]
+        List of factors responsible for optimal performance of portfolio measured by SR/IR
+    
+    n_assets : int
+        Number of assets to include in portfolio
+    
+    Returns
+    -------
+
+    List of assets to include in portfolio
     """
+
     ff_data, stock_open_data, stock_close_data, stock_returns, market_returns = get_data(stock_tickers=STOCK_TICKERS, market_ticker=MARKET_TICKER)
 
-    factor_trading_strat = FactorTradingStrategy(strategy=optimal_strategy, ff_data=ff_data, open_df=stock_open_data, close_df=stock_close_data, stock_returns=stock_returns, market_returns=market_returns)
+    alpha_trading_strat = AlphaTradingStrategy(factor_combination=optimal_factor_combination, ff_data=ff_data, open_df=stock_open_data, close_df=stock_close_data, stock_returns=stock_returns, market_returns=market_returns, topn=len(STOCK_TICKERS))
+    avg_rank_assets = alpha_trading_strat.get_avg_rank()
 
-    _, avg_rank_factor_df = factor_trading_strat.avg_rank_tickers_based_strategy()
-
-    asset_mean_rank_df = avg_rank_factor_df.mean().reset_index().sort_values(by=0).rename(columns={'index': 'Asset', 0: 'Rank'}).reset_index(drop=True)
-    ranked_assets = dict(zip(asset_mean_rank_df.loc[:4, 'Asset'], 1/asset_mean_rank_df.loc[:4, 'Rank']))
-    total_sum = sum(ranked_assets.values())
-    portfolio = {k: v /total_sum for k, v in ranked_assets.items()}
-
-    return portfolio
-
+    return avg_rank_assets[:n_assets]["Asset"].tolist()
 
 
 if __name__ == "__main__":
 
     # Determine Optimal Set of Factor Loadings based on Sharpe Ratio of Portfolio
-    optimal_strategy = calc_optimal_strategy(metric="Sharpe Ratio")
-    print(f"Optimal Strategy : {optimal_strategy}")
+    optimal_factor_combination = calc_optimal_factors(metric="Sharpe Ratio")
+    print(f"Optimal Factor Combination: {optimal_factor_combination}")
 
     # Performance Metrics of Optimal Set of Factor Loadings 
-    optimal_performance = backtest(strategies=optimal_strategy)
+    optimal_performance = backtest(factor_combinations=[optimal_factor_combination])
     print(f"Optimal Performance Metrics : {optimal_performance}")
 
     # Optimal Portfolio Allocation
-    optimal_portfolio = portfolio_construction(optimal_strategy=optimal_strategy)
+    optimal_portfolio = portfolio_construction(optimal_factor_combination=optimal_factor_combination, n_assets=5)
     print(f"Optimal Portfolio Allocation : {optimal_portfolio}")

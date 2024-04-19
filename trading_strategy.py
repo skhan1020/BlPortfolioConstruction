@@ -205,6 +205,40 @@ class AlphaTradingStrategy:
         return alpha_sorted_df.iloc[:, :self.topn]
 
 
+
+    def get_avg_rank(self):
+        """
+        Average Rank of Assets based on their Alpha Values on each trading day
+
+        Returns
+        -------
+
+        asset_mean_rank_df : pd.DataFrame
+            average rank of each asset in ascending order
+        """
+        alpha_sorted_df = self.holding_tickers()
+
+        def rank_tickers(df):
+
+            df_list = df.to_dict('records')
+
+            ranked_list = list()
+
+            for dict_item in df_list:
+                ranked_list.append({v: int(k.split()[1]) for k, v in dict_item.items()})
+            
+            ranked_factor_df = pd.DataFrame(ranked_list)
+            
+            return ranked_factor_df
+
+        ranked_alpha_df = rank_tickers(df=alpha_sorted_df)
+        
+        asset_mean_rank_df = ranked_alpha_df.mean().reset_index().sort_values(by=0).rename(columns={'index': 'Asset', 0: 'Rank'}).reset_index(drop=True)
+        
+        return asset_mean_rank_df
+    
+
+
     def generate_signals(self):
         """
         Portfolio Rebalancing - Compute P&L using a multi-factor based strategy
