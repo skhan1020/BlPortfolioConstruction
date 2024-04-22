@@ -14,12 +14,17 @@ from optimizer import (
 )
 
 # Initial Portfolio Equities (Equities Determined from Optimal Portfolio Determined using French Fama Factor Model)
-# optimal_portfolio_allocation = {'IBM': 0.2310020985134861, 'AMD': 0.2074646313673274, 'BAC': 0.1971430079162166, 'WHR': 0.18338721241903663, 'JPM': 0.18100304978393322}
 PORTFOLIO_EQUITIES = ['IBM', 'AMD', 'BAC', 'WHR', 'JPM']
 
 def excess_asset_returns():
     """
     Determine Excess Asset Returns (Historical) and Risk-Free Rates from Factor Data for all equities
+
+    Returns
+    -------
+
+    merged_stock_rf_data : pd.DataFrame
+        excess asset returns for each equity included in the portfolio
     """
     print("-" * 50 + "Loading Time Series of Factors" + "-" * 50)
     famafrenchfactor = FamaFrenchFactorDataLoader()
@@ -47,6 +52,12 @@ def excess_asset_returns():
 def annual_excess_asset_returns():
     """
     Function to compute annual returns (excess)
+
+    Returns
+    -------
+
+    stock_rf_data1 : pd.DataFrame
+        Dataframe of excess annual returns of assets
     """
     stock_rf_data = excess_asset_returns()
 
@@ -63,6 +74,30 @@ def annual_excess_asset_returns():
 def portfolio_data(stock_rf_data, freq):
     """
     Function to generate annual returns (excess), standard dev, covariance, risk-free rate
+
+    Parameters
+    ----------
+    
+    stock_rf_data : pd.DataFrame
+        Historical Excess Annual Returns
+    
+    freq : int
+        Frequency of returns
+    
+    Returns
+    -------
+    
+    freq_returns : pd.Series
+        Average excess annual returns of assets within portfolio
+    
+    freq_stdev : pd.Series
+        Std. Dev of excess annual returns of assets within portfolio
+    
+    cov : pd.DataFrame
+        Covariance Matrix
+    
+    freq_rf : float
+        Average risk-free rate from historical 'RF' data
     """
     stock_returns = stock_rf_data[PORTFOLIO_EQUITIES]
     rf = stock_rf_data[RF_COL]
@@ -79,6 +114,30 @@ def portfolio_data(stock_rf_data, freq):
 def calc_optimal_portfolio_weights(mu, cov, rf, method, risk_aversion):
     """
     Calculate Optimal Portfolio Weights using Optimization Strategy
+
+    Parameters
+    ----------
+
+    mu : pd.Series
+        Average excess annual returns of assets within portfolio
+
+    cov : pd.DataFrame
+        Covariance Matrix
+
+    rf : float
+        Average risk-free rate from historical 'RF' data
+    
+    method : str
+        Optimization method
+    
+    risk_aversion : float
+        Investor risk appetite
+
+    Returns
+    -------
+
+    optimal_weights : np.array
+        Array of optimal portoflio allocations
     """
     if method == "Mean-Variance":
         # Calculate Optimal Weights determined by constrained Mean-Variance Optimization 
