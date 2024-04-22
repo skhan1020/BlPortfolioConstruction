@@ -16,6 +16,19 @@ from sklearn.model_selection import train_test_split
 def generate_returns(data, ticker):
     """
     Predict Future Average Returns from Earnings Reports using Regression Model
+
+    Parameters
+    ----------
+
+    ticker : str
+        Ticker symbol for the equity used in forecasting future returns based on prior earnings
+
+    Returns
+    -------
+
+    avg_predictions : float
+        expected future returns 
+
     """
     # Earnings Report - Input Features; Future Returns - Target
     X, y = data[EARNINGS_FIELDS], data.loc[:, [ticker]].shift(-1)
@@ -39,6 +52,22 @@ def generate_returns(data, ticker):
 def generate_positions(tickers):
     """
     Function to Generate the Position and Return Matrices for the Likelihood Function in BL model
+
+    Parameters
+    ----------
+
+    tickers : List[str]
+        List of ticker symbols of equities included in portfolio
+
+    
+    Returns
+    -------
+
+    position_matrix : np.ndarray
+        Positions taken by investor based on Absolute & Relative Views
+
+    return_vector : np.array
+        Expected confidence scores associated with each view of the investor
     """
     # Earnings Reports of All Assets in Portfolio
     equity_earnings_obj = EarningsReportLoader(tickers=PORTFOLIO_EQUITIES)
