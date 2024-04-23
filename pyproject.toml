@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "BlPortfolioConstruction"
+version = "0.0.0"
+description = "A bayesian approach to portfolio optimization"
+authors = ["Souratosh Khan <souratosh.khan86@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/skhan1020/BlPortfolioConstruction"
+packages = [ {include = "blportopt"} ]
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+numpy = "^1.24.4"
+pandas = "^2.0.3"
+pandas-datareader = "^0.10.0"
+statsmodels = "^0.14.1"
+matplotlib = "^3.7.4"
+scipy = "^1.10.1"
+scikit-learn = "^1.3.2"
+yfinance = "^0.2.35"
+
+[tool.poetry.dev-dependencies]
+requests = "^2.31.0"
+jupyterlab = "4.0.11"
+
+[tool.coverage.paths]
+source = ["blportopt"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
