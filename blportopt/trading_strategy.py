@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from config import (
+from blportopt.config import (
     STOCK_TICKERS,
     MARKET_TICKER,
     FACTOR_COMBINATIONS,
@@ -12,8 +12,8 @@ from config import (
     TOPN,
 )
 
-from data_utils import get_data
-from fama_french_model import FamaFrenchModel
+from blportopt.data_utils import get_data
+from blportopt.fama_french_model import FamaFrenchModel
 
 def get_alpha(stocks, factors, stock_returns, ff_data, rf_col=RF_COL, window=WINDOW, rolling=ROLLING):
     """

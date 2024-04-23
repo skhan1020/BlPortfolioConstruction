@@ -2,7 +2,7 @@ import pandas as pd
 import statsmodels.api as sm
 from statsmodels.regression.rolling import RollingOLS
 import matplotlib.pyplot as plt
-from config import (
+from blportopt.config import (
     STOCK_TICKERS,
     MARKET_TICKER,
     FACTOR_COMBINATIONS,
@@ -10,7 +10,7 @@ from config import (
     WINDOW, 
     ROLLING,
 )
-from data_utils import get_data
+from blportopt.data_utils import get_data
 
 class FamaFrenchModel:
     """

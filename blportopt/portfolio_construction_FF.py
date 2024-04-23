@@ -1,11 +1,11 @@
-from config import (
+from blportopt.config import (
     STOCK_TICKERS,
     MARKET_TICKER,
     FACTOR_COMBINATIONS,
 )
 
-from data_utils import get_data
-from trading_strategy import (
+from blportopt.data_utils import get_data
+from blportopt.trading_strategy import (
     AlphaTradingStrategy,
     backtest
 )

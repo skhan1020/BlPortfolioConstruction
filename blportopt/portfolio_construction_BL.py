@@ -1,14 +1,14 @@
 import numpy as np
 import pandas as pd
-from config import (
+from blportopt.config import (
     RF_COL,
     FF_FILENAMES,
 )
-from data_utils import (
+from blportopt.data_utils import (
     FamaFrenchFactorDataLoader,
     EquityDataLoader,
 )
-from optimizer import (
+from blportopt.optimizer import (
     MeanVarOptimizer,
     MaxSharpeRatioOptimizer,
 )

@@ -2,7 +2,7 @@ import os
 import pandas_datareader as pdr
 import pandas as pd
 import yfinance as yf
-from config import (
+from blportopt.config import (
     EQ_START_DATE,
     EQ_END_DATE,
     INTERVAL,
