@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,6 +11,7 @@ from blportopt.config import (
     ROLLING,
     INITIAL_CAPITAL,
     TOPN,
+    FIGURES_DIR,
 )
 
 from blportopt.data_utils import get_data
@@ -359,7 +361,7 @@ class AlphaTradingStrategy:
         plt.xlabel('Date')
         plt.ylabel('Cumulative Returns')
         plt.grid(True)
-        plt.savefig(f"Figures/Cumulative_Returns_{factor_combination}.png")
+        plt.savefig(os.path.join(FIGURES_DIR, f"Cumulative_Returns_{factor_combination}.png"))
         plt.show()
         
 

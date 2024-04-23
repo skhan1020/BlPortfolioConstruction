@@ -1,3 +1,5 @@
+from pathlib import Path
+
 # Portfolio of Stocks
 STOCK_TICKERS = ['AAPL', 'IBM','PG', 'GE', 'AMD', 'WMT', 'BAC', 'T', 'XOM', 'RRC', 'BBY', 'PFE', 'JPM', 'C','MCD', 'KO', 'JNJ', 'WHR', 'MMM', 'GIS']
 
@@ -32,23 +34,17 @@ WINDOW = 60
 # Flag
 ROLLING=True
 
+
+# Figures Directory
+FIGURES_DIR = Path(__file__).parent.parent / "Figures"
+
+
 # Initial Capital
 INITIAL_CAPITAL=1000
 
 # Top N Stocks Selected in Alpha Trading Strategy
 TOPN=5
 
-# Strategies based on Individual Factors
-STRATEGIES = [['Alpha'], ['Mkt-RF'], ['SMB'], ['HML'], ['RMW'], ['CMA'], ['Mom']]
-
-# All Possible Factor Combinations
-ALL_STRATEGIES = list()
-for i in range(0, len(STRATEGIES)):
-    strategy_list = [STRATEGIES[i][0]]
-    ALL_STRATEGIES.append(strategy_list)
-    for j in range(i+1, len(STRATEGIES)):
-        strategy_list = strategy_list + [STRATEGIES[j][0]]
-        ALL_STRATEGIES.append(strategy_list)
 
 # Earnings Report From Alpha Vantage API
 FUNCTION = 'EARNINGS'

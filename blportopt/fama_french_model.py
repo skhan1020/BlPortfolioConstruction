@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import statsmodels.api as sm
 from statsmodels.regression.rolling import RollingOLS
@@ -9,6 +10,7 @@ from blportopt.config import (
     RF_COL, 
     WINDOW, 
     ROLLING,
+    FIGURES_DIR,
 )
 from blportopt.data_utils import get_data
 
@@ -93,7 +95,7 @@ class FamaFrenchModel:
 
         fig = plt.figure(figsize=(12, 8))
         sm.graphics.plot_partregress_grid(self.fitted_model, fig=fig)
-        plt.savefig("Figures/Partial_Regression_Plots_" + self.stock + ".png")
+        plt.savefig(os.path.join(FIGURES_DIR, "Partial_Regression_Plots_" + self.stock + ".png"))
 
 
     def rolling_beta_groups(self):
@@ -143,7 +145,7 @@ class FamaFrenchModel:
         rolling_betas.groupby(["Group"])[self.rf_col].hist(bins=100, density=True, legend=True)
         plt.ylabel(r"$\alpha_{}$".format({self.rf_col}))
         plt.title(r"{0} : $\alpha_{1}$".format(self.stock,{self.rf_col}))
-        plt.savefig(f"Figures/Alpha_{self.rf_col}_Histogram_{self.stock}_{self.factor_combinations}.png")
+        plt.savefig(os.path.join(FIGURES_DIR, f"Alpha_{self.rf_col}_Histogram_{self.stock}_{self.factor_combinations}.png"))
         plt.close()
 
         if len(self.factors) == 1:
@@ -165,7 +167,7 @@ class FamaFrenchModel:
             ax.set_ylabel(r"$\beta_{}$".format({factor}))
             ax.set_title(r"{0} : $\beta_{1}$".format(self.stock,{factor}))
 
-        fig.savefig(f"Figures/Factor_Histogram_{self.stock}_{self.factor_combinations}.png")
+        fig.savefig(os.path.join(FIGURES_DIR, f"Factor_Histogram_{self.stock}_{self.factor_combinations}.png"))
 
         plt.close()
 
@@ -177,7 +179,7 @@ class FamaFrenchModel:
         print("-" * 50 + f"Rolling Estimates of Sensitivity Factors for {self.stock}" + "-" * 50)
         
         fig = self.fitted_model.plot_recursive_coefficient(variables=["const"] + self.factors, figsize=(20,30))
-        plt.savefig(f"Figures/Rolling_Estimates_{self.stock}_{self.factor_combinations}.png")                
+        plt.savefig(os.path.join(FIGURES_DIR, f"Rolling_Estimates_{self.stock}_{self.factor_combinations}.png"))                
         plt.close()
 
         print("-" * 50 + "Done!" + "-" * 50)

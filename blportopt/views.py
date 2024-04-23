@@ -49,7 +49,7 @@ def generate_returns(data, ticker):
     return avg_predictions
 
 
-def generate_positions(tickers):
+def generate_positions(tickers=PORTFOLIO_EQUITIES, from_file=True):
     """
     Function to Generate the Position and Return Matrices for the Likelihood Function in BL model
 
@@ -70,7 +70,7 @@ def generate_positions(tickers):
         Expected confidence scores associated with each view of the investor
     """
     # Earnings Reports of All Assets in Portfolio
-    equity_earnings_obj = EarningsReportLoader(tickers=PORTFOLIO_EQUITIES)
+    equity_earnings_obj = EarningsReportLoader(tickers=PORTFOLIO_EQUITIES, from_file=from_file)
     
     # Quarterly Earnings Reports
     earnings_reports = equity_earnings_obj.get_earniings_history()
