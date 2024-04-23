@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
-from config import EARNINGS_FIELDS
+from blportopt.config import EARNINGS_FIELDS
 
-from data_utils import (
+from blportopt.data_utils import (
     EarningsReportLoader, 
 )
-from portfolio_construction_BL import (
+from blportopt.portfolio_construction_BL import (
     PORTFOLIO_EQUITIES,
     annual_excess_asset_returns,
 )
