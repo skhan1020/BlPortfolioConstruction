@@ -285,7 +285,7 @@ class EarningsReportLoader:
 
     def get_earnings_response(self):
         """
-        Etract earnings report from Alpha Vantage API and serialize file
+        Extract earnings report from Alpha Vantage API and serialize file
         """
 
         # Holds earnings data for each ticker
@@ -344,7 +344,7 @@ class EarningsReportLoader:
             with open("Earnings_Report.pkl", "rb") as f:
                 earnings_data = pickle.load(f)
         else:
-            earnings_data = self.get_earniings_history()
+            earnings_data = self.get_earnings_response()
 
         # Aggregate Earnings Reports
         df_quarterly = pd.DataFrame()

@@ -12,6 +12,11 @@ from blportopt.portfolio_construction_BL import (
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 
+def get_views(earnings_report):
+
+    # automate investor views from earnings report
+    viewdict = {}
+    pass
 
 def generate_returns(data, ticker):
     """
@@ -67,7 +72,7 @@ def generate_positions(tickers=PORTFOLIO_EQUITIES, from_file=True):
         Positions taken by investor based on Absolute & Relative Views
 
     return_vector : np.array
-        Expected confidence scores associated with each view of the investor
+        Expected returns (absolute or relative) associated with each view of the investor
     """
     # Earnings Reports of All Assets in Portfolio
     equity_earnings_obj = EarningsReportLoader(tickers=PORTFOLIO_EQUITIES, from_file=from_file)
