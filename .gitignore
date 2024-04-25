@@ -1,1 +1,8 @@
-Figures/*.png
+.git
+build
+
+# Environment
+.venv
+venv/
+
+*.png
