@@ -58,6 +58,9 @@ EARNINGS_FIELDS = [
 # Alpha Vantage API Key
 API_KEY = "O16ZZ2O1MIS9KZLJ"
 
+# Earnings_Report Filename
+EARNINGS_REPORT = Path(__file__).parent / "Earnings_Report.pkl"
+
 # Equilibrium Sharpe Ratio for Black-Litterman Model
 SHARPE_RATIO_MKT = 0.5
 
