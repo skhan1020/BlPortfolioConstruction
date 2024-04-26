@@ -265,7 +265,7 @@ class EarningsReportLoader:
         self.from_file = from_file
 
     @staticmethod
-    def save_earnings_file(earnings_response, filename):
+    def save_earnings_data(earnings_response, filename):
         """
         serialize earnings report
 
@@ -282,6 +282,29 @@ class EarningsReportLoader:
         with open(filename, 'wb') as f:
             pickle.dump(earnings_response, f)
 
+    @staticmethod
+    def load_earnings_data(filename):
+        """
+        load earnings report
+
+        Parameters
+        ----------
+
+        filename : str
+            Pickle filename with Earnings data
+        
+        Returns
+        --------
+
+        data : pd.DataFrame
+            earnings data from Alpha Vantage API
+        """
+        
+        with open(filename, 'rb') as f:
+            data = pickle.load(f)
+
+        return data
+
 
     def get_earnings_response(self):
         """
@@ -296,10 +319,7 @@ class EarningsReportLoader:
             response = requests.get(f'{BASE_URL}function={FUNCTION}&symbol={ticker}&apikey={API_KEY}')
             earnings[ticker] = response.json()
         
-        if self.from_file:
-            self.save_earnings_file(earnings, "Earnings_Report.pkl")
-        else:
-            return earnings
+        return earnings
     
 
     def quarterly_earnings_report(self, earnings_data, ticker):
@@ -341,10 +361,10 @@ class EarningsReportLoader:
         # Create Response from AlphaVantage API 
         
         if self.from_file:
-            with open("Earnings_Report.pkl", "rb") as f:
-                earnings_data = pickle.load(f)
+            earnings_data = self.load_earnings_data(filename=os.path.join(os.getcwd(), "Earnings_Report.pkl"))
         else:
             earnings_data = self.get_earnings_response()
+            self.save_earnings_data(earnings_response=earnings_data, filename=os.path.join(os.getcwd(), "Earnings_Report.pkl"))
 
         # Aggregate Earnings Reports
         df_quarterly = pd.DataFrame()

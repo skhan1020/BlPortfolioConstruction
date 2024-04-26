@@ -16,10 +16,16 @@ from blportopt.optimizer import (
 # Initial Portfolio Equities (Equities Determined from Optimal Portfolio Determined using French Fama Factor Model)
 PORTFOLIO_EQUITIES = ['IBM', 'AMD', 'BAC', 'WHR', 'JPM']
 
-def excess_asset_returns():
+def excess_asset_returns(tickers):
     """
     Determine Excess Asset Returns (Historical) and Risk-Free Rates from Factor Data for all equities
 
+    Parameters
+    ----------
+    
+    tickers : List[str]
+        List of assets (ticker symbols)
+    
     Returns
     -------
 
@@ -34,7 +40,7 @@ def excess_asset_returns():
     ff_data = ff_data / 100
 
     # Extract Close Prices of each Stock
-    stock_data_obj = EquityDataLoader(tickers=PORTFOLIO_EQUITIES)
+    stock_data_obj = EquityDataLoader(tickers=tickers)
     stock_close_data = stock_data_obj.get_history(price_type="Close")
 
     # Monthly Returns on Individual Stocks
@@ -43,15 +49,21 @@ def excess_asset_returns():
     merged_stock_rf_data = pd.merge(stock_returns, ff_data[RF_COL], how="inner", left_index=True, right_index=True)
 
     # Determine Excess Stock Returns ( Subtract Risk Free Returns to Calculate Risk Premia Associated with Each Stock )
-    for stock in PORTFOLIO_EQUITIES:
+    for stock in tickers:
         merged_stock_rf_data[stock] = merged_stock_rf_data[stock] - merged_stock_rf_data[RF_COL]
 
     return merged_stock_rf_data
 
 
-def annual_excess_asset_returns():
+def annual_excess_asset_returns(tickers):
     """
     Function to compute annual returns (excess)
+
+    Parameters
+    ----------
+
+    tickers : List[str]
+        List of assets (ticker symbols)
 
     Returns
     -------
@@ -65,13 +77,13 @@ def annual_excess_asset_returns():
     stock_rf_data.reset_index(inplace=True)
     stock_rf_data["Year"] = stock_rf_data["Date"].dt.year.astype(str)
 
-    stock_rf_data1 = stock_rf_data.groupby(["Year"])[PORTFOLIO_EQUITIES].mean().reset_index()
+    stock_rf_data1 = stock_rf_data.groupby(["Year"])[tickers].mean().reset_index()
     stock_rf_data1.set_index("Year", inplace=True)
     
     return stock_rf_data1
 
 
-def portfolio_data(stock_rf_data, freq):
+def portfolio_data(stock_rf_data, tickers, freq):
     """
     Function to generate annual returns (excess), standard dev, covariance, risk-free rate
 
@@ -80,6 +92,9 @@ def portfolio_data(stock_rf_data, freq):
     
     stock_rf_data : pd.DataFrame
         Historical Excess Annual Returns
+    
+    tickers : List[str]
+        List of assets (ticker symbols)
     
     freq : int
         Frequency of returns
@@ -99,7 +114,7 @@ def portfolio_data(stock_rf_data, freq):
     freq_rf : float
         Average risk-free rate from historical 'RF' data
     """
-    stock_returns = stock_rf_data[PORTFOLIO_EQUITIES]
+    stock_returns = stock_rf_data[tickers]
     rf = stock_rf_data[RF_COL]
 
 
