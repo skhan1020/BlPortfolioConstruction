@@ -27,7 +27,7 @@ def get_dictionary_of_views(returns_dict):
     
     relative_view_dict: dict
         dicionary of relative returns associated with every pair of equity
-        
+
     """
 
     absolute_view_dict, relative_view_dict = dict(), dict()
@@ -178,7 +178,7 @@ def generate_positions(investor_views, historical_returns, tickers, from_file=Tr
     earnings_reports = equity_earnings_obj.get_earniings_history()
 
     # Excess Asset Returns (Historical)
-    annual_stock_returns_data = annual_excess_asset_returns()
+    annual_stock_returns_data = annual_excess_asset_returns(tickers=tickers)
 
 
     ticker_predictions = dict()

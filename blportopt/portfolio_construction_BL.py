@@ -22,7 +22,7 @@ def excess_asset_returns(tickers):
 
     Parameters
     ----------
-    
+
     tickers : List[str]
         List of assets (ticker symbols)
     
@@ -71,7 +71,7 @@ def annual_excess_asset_returns(tickers):
     stock_rf_data1 : pd.DataFrame
         Dataframe of excess annual returns of assets
     """
-    stock_rf_data = excess_asset_returns()
+    stock_rf_data = excess_asset_returns(tickers=tickers)
 
     stock_rf_data.drop(columns=["RF"], inplace=True)
     stock_rf_data.reset_index(inplace=True)
