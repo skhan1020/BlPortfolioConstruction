@@ -14,6 +14,7 @@ from blportopt.config import (
     FUNCTION,
     API_KEY,
     EARNINGS_FIELDS,
+    EARNINGS_REPORT,
 )
 import requests
 import pickle
@@ -361,10 +362,10 @@ class EarningsReportLoader:
         # Create Response from AlphaVantage API 
         
         if self.from_file:
-            earnings_data = self.load_earnings_data(filename=os.path.join(os.getcwd(), "Earnings_Report.pkl"))
+            earnings_data = self.load_earnings_data(filename=EARNINGS_REPORT)
         else:
             earnings_data = self.get_earnings_response()
-            self.save_earnings_data(earnings_response=earnings_data, filename=os.path.join(os.getcwd(), "Earnings_Report.pkl"))
+            self.save_earnings_data(earnings_response=earnings_data, filename=EARNINGS_REPORT)
 
         # Aggregate Earnings Reports
         df_quarterly = pd.DataFrame()
