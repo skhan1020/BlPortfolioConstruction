@@ -2,8 +2,15 @@
 name = "blportopt"
 version = "0.0.0"
 description = "A bayesian approach to portfolio optimization"
+license = "MIT"
 authors = ["Souratosh Khan <souratosh.khan86@gmail.com>"]
 readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 repository = "https://github.com/skhan1020/BlPortfolioConstruction"
 packages = [ {include = "blportopt"} ]
 
