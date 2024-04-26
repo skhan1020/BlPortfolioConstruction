@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "BlPortfolioConstruction"
+name = "blportopt"
 version = "0.0.0"
 description = "A bayesian approach to portfolio optimization"
 authors = ["Souratosh Khan <souratosh.khan86@gmail.com>"]
