@@ -13,9 +13,6 @@ from blportopt.optimizer import (
     MaxSharpeRatioOptimizer,
 )
 
-# Initial Portfolio Equities (Equities Determined from Optimal Portfolio Determined using French Fama Factor Model)
-PORTFOLIO_EQUITIES = ['IBM', 'AMD', 'BAC', 'WHR', 'JPM']
-
 def excess_asset_returns(tickers):
     """
     Determine Excess Asset Returns (Historical) and Risk-Free Rates from Factor Data for all equities
