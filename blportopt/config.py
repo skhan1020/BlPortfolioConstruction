@@ -38,6 +38,10 @@ FUND_TICKERS = [
     "IYR",
 ]
 
+# Equity Tickers
+ASSET_TICKERS = {"stock": STOCK_TICKERS, "fund": FUND_TICKERS}
+
+
 # Market Index Ticker
 MARKET_TICKER = "SPY"
 

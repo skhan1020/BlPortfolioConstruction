@@ -9,7 +9,7 @@ from blportopt.config import (
     FF_START_DATE,
     FF_FILENAMES,
     STOCK_TICKERS,
-    FUND_TICKERS,
+    ASSET_TICKERS,
     MARKET_TICKER,
     BASE_URL,
     FUNCTION,
@@ -221,9 +221,6 @@ def get_data(asset_tickers, market_ticker, asset_type="stock"):
     ff_data = ff_data / 100
 
     print("-" * 50 + "Done!" + "-" * 50)
-
-    ASSET_TICKERS = {"stock": STOCK_TICKERS, "fund": FUND_TICKERS}
-
     print("-" * 50 + f"Loading Historical Prices of {len(ASSET_TICKERS[asset_type])} Equities (Stocks/Funds)" + "-" * 50)
 
     # Extract Open/Close Prices of each Asset
