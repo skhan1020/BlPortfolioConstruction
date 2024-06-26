@@ -1,7 +1,42 @@
 from pathlib import Path
 
 # Portfolio of Stocks
-STOCK_TICKERS = ['AAPL', 'IBM','PG', 'GE', 'AMD', 'WMT', 'BAC', 'T', 'XOM', 'RRC', 'BBY', 'PFE', 'JPM', 'C','MCD', 'KO', 'JNJ', 'WHR', 'MMM', 'GIS']
+STOCK_TICKERS = [
+    'AAPL', 
+    'IBM',
+    'PG', 
+    'GE', 
+    'AMD', 
+    'WMT', 
+    'BAC', 
+    'T', 
+    'XOM', 
+    'RRC', 
+    'BBY', 
+    'PFE', 
+    'JPM', 
+    'C',
+    'MCD', 
+    'KO', 
+    'JNJ', 
+    'WHR', 
+    'MMM', 
+    'GIS'
+    ]
+
+# Portoflio of Funds
+FUND_TICKERS = [
+    "XLK",
+    "XLF",
+    "XLV",
+    "XLY",
+    "XLI",
+    "XLP",
+    "XLE",
+    "XLB",
+    "XLU",
+    "IYR",
+]
 
 # Market Index Ticker
 MARKET_TICKER = "SPY"

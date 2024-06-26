@@ -9,6 +9,7 @@ from blportopt.config import (
     FF_START_DATE,
     FF_FILENAMES,
     STOCK_TICKERS,
+    FUND_TICKERS,
     MARKET_TICKER,
     BASE_URL,
     FUNCTION,
@@ -177,18 +178,21 @@ class FamaFrenchFactorDataLoader:
         return factor_data
 
 
-def get_data(stock_tickers, market_ticker):
+def get_data(asset_tickers, market_ticker, asset_type="stock"):
     """
     Function to collect Factor and Equity Data
 
     Parameters
     ----------
 
-    stock_tickers : List[str]
+    asset_tickers : List[str]
         List of stock tickers to generate historical asset prices 
     
     market_ticker : str
         Benchmark market index for comparing portfolio performance
+
+    asset_type : str
+        Type of Asset (Stocks, Funds etc)
 
     Returns
     --------
@@ -218,23 +222,26 @@ def get_data(stock_tickers, market_ticker):
 
     print("-" * 50 + "Done!" + "-" * 50)
 
-    print("-" * 50 + f"Loading Historical Prices of {len(STOCK_TICKERS)} Equities (Stocks)" + "-" * 50)
-    # Extract Open/Close Prices of each Stock
-    stock_data_obj = EquityDataLoader(tickers=stock_tickers)
+    ASSET_TICKERS = {"stock": STOCK_TICKERS, "fund": FUND_TICKERS}
 
-    # Open Prices of Stocks (Monthly)
-    stock_open_data = stock_data_obj.get_history(price_type="Open")
-    processed_open_data = stock_data_obj.process_timestamp(stock_open_data)
+    print("-" * 50 + f"Loading Historical Prices of {len(ASSET_TICKERS[asset_type])} Equities (Stocks/Funds)" + "-" * 50)
 
-    # Close Prices of Stocks (Monthly)
-    stock_close_data = stock_data_obj.get_history(price_type="Close")
-    processed_close_data = stock_data_obj.process_timestamp(stock_close_data)
+    # Extract Open/Close Prices of each Asset
+    asset_data_obj = EquityDataLoader(tickers=asset_tickers)
+
+    # Open Prices of Assets (Monthly)
+    asset_open_data = asset_data_obj.get_history(price_type="Open")
+    processed_open_data = asset_data_obj.process_timestamp(asset_open_data)
+
+    # Close Prices of Assets (Monthly)
+    asset_close_data = asset_data_obj.get_history(price_type="Close")
+    processed_close_data = asset_data_obj.process_timestamp(asset_close_data)
 
     print("-" * 50 + "Done!" + "-" * 50)
-
-    print("-" * 50 + f"Calculating Historical Returns of {len(STOCK_TICKERS)} Equities (Stocks)" + "-" * 50)
-    # Monthly Returns on Individual Stocks
-    stock_returns = stock_data_obj.get_returns(stock_close_data)
+    print("-" * 50 + f"Calculating Historical Returns of {len(ASSET_TICKERS[asset_type])} Equities (Stocks/Funds)" + "-" * 50)
+    
+    # Monthly Returns on Individual Assets
+    asset_returns = asset_data_obj.get_returns(asset_close_data)
     print("-" * 50 + "Done!" + "-" * 50)
 
     print("-" * 50 + f"Loading Historical Prices of {MARKET_TICKER}" + "-" * 50)
@@ -245,7 +252,7 @@ def get_data(stock_tickers, market_ticker):
     print("-" * 50 + "Done!" + "-" * 50)
 
 
-    return ff_data, processed_open_data, processed_close_data, stock_returns, spy_returns
+    return ff_data, processed_open_data, processed_close_data, asset_returns, spy_returns
 
 
 class EarningsReportLoader:
@@ -381,7 +388,7 @@ class EarningsReportLoader:
 
 if __name__ == "__main__":
 
-    ff_data, stock_open_data, stock_close_data, stock_returns, market_returns = get_data(stock_tickers=STOCK_TICKERS, market_ticker=MARKET_TICKER)
+    ff_data, stock_open_data, stock_close_data, stock_returns, market_returns = get_data(asset_tickers=STOCK_TICKERS, market_ticker=MARKET_TICKER, asset_type="stock")
     
     print(ff_data.head())
     print(stock_open_data.head())
