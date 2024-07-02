@@ -260,7 +260,7 @@ def famafrench_regression_analysis(asset_type, factor_combinations=FACTOR_COMBIN
 
     ff_model_config = FFModelConfig(rf_col=rf_col, window=window, rolling=rolling)
 
-    ff_asset_rsq, ff_asset_params = pd.DataFrame(), pd.DataFrame()
+    ff_asset_rsq, ff_asset_params = pd.DataFrame(), dict()
     for factors in factor_combinations:
         df_asset_rsq, df_asset_params = pd.DataFrame(), pd.DataFrame()
         for asset in ASSET_TICKERS[asset_type]:
@@ -299,12 +299,12 @@ def famafrench_regression_analysis(asset_type, factor_combinations=FACTOR_COMBIN
                 df_params.rename(columns={"const": "Alpha"}, inplace=True)        
                 df_params.index = [asset]
                 df_asset_params = pd.concat([df_asset_params, df_params])
-
+                ff_asset_params.update({model.factor_combinations: df_asset_params})
 
 
 
         ff_asset_rsq = pd.concat([ff_asset_rsq, df_asset_rsq], axis=1)
-        ff_asset_params = pd.concat([ff_asset_params, df_asset_params], axis=1)
+        # ff_asset_params = pd.concat([ff_asset_params, df_asset_params], axis=1)
 
     return ff_asset_rsq if rolling else ff_asset_params
 
