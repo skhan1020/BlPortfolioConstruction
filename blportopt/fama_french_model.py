@@ -47,7 +47,6 @@ class FamaFrenchModel:
     def __init__(self, asset, model_config):
         self.asset = asset
         self.factors = model_config.factors
-        #self.factors = factors
         self.factor_combinations = "_".join([x for x in self.factors])
         self.rf_col = model_config.rf_col
         self.window = model_config.window
@@ -157,7 +156,7 @@ class FamaFrenchModel:
         fig = plt.figure(figsize=(12, 8))
         sm.graphics.plot_partregress_grid(self.fitted_model, fig=fig)
         plt.savefig(os.path.join(FIGURES_DIR, f"Partial_Regression_Plots_{self.asset}_{self.factor_combinations}.png"))
-
+        plt.close()
 
     def rolling_beta_groups(self):
         """
