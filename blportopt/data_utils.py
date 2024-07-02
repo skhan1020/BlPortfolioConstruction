@@ -248,7 +248,6 @@ def get_data(asset_tickers, market_ticker, asset_type="stock"):
 
     print("-" * 50 + "Done!" + "-" * 50)
 
-
     return ff_data, processed_open_data, processed_close_data, asset_returns, spy_returns
 
 
