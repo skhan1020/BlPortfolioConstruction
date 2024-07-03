@@ -16,11 +16,12 @@ class MeanVarOptimizer:
             w', mu' are the transposed vectors of w, mu respectively
     """
 
-    def __init__(self, mu, cov, risk_aversion):
+    def __init__(self, mu, cov, r, risk_aversion):
         self.mu = mu
         self.cov = cov
         self.risk_aversion = risk_aversion
         self.I = np.ones(cov.shape[0])
+        self.r = r
 
     @property
     def cov_inv(self):
@@ -41,22 +42,34 @@ class MeanVarOptimizer:
         return 0.5 * self.risk_aversion * multi_dot([w.T, self.cov, w]) - np.dot(self.mu.T, w)
     
 
-    def constraints(self, w):
+    def budget_constraint(self, w):
         """
-        Constaint equation
+        Budget Constaint equation
 
         w' * I = 1
         """
 
         return np.dot(w.T, self.I) - 1
+    
+    def target_return_constraint(self, w):
+        """
+        Target Return constraint
 
+        w'mu = r
+        """
+
+        return np.dot(w.T, self.mu) - self.r
+    
     @property
     def optimal_w(self):
         """
         Optimization of weights of portfolio using scoipy.optimize.minimize
         """
         # constraints
-        cons = ({'type': 'eq', 'fun': self.constraints})
+        cons = (
+            {'type': 'eq', 'fun': self.budget_constraint},
+            {'type': 'eq', 'fun': self.target_return_constraint},            
+            )
 
         # Initial guess of weights (equal probability)
         w0 = np.ones(self.mu.shape[0])*(1/self.mu.shape[0])
@@ -103,14 +116,24 @@ class MaxSharpeRatioOptimizer:
         return -(np.dot(w.T, self.mu) - self.rf) / np.sqrt(multi_dot([w.T, self.cov, w])) 
     
 
-    def constraints(self, w):
+    def budget_constraint(self, w):
         """
-        Constaint equation
+        Budget Constaint equation
 
         w' * I = 1
         """
-        
+
         return np.dot(w.T, self.I) - 1
+    
+    def target_return_constraint(self, w):
+        """
+        Target Return constraint
+
+        w'mu = r
+        """
+
+        return np.dot(w.T, self.mu) - self.r
+
 
     @property
     def optimal_w(self):
@@ -118,7 +141,10 @@ class MaxSharpeRatioOptimizer:
         Optimization of weights of portfolio using scoipy.optimize.minimize
         """
         # constraints
-        cons = ({'type': 'eq', 'fun': self.constraints})
+        cons = (
+            {'type': 'eq', 'fun': self.budget_constraint},
+            {'type': 'eq', 'fun': self.target_return_constraint},            
+            )
 
         # Initial guess of weights (equal probability)
         w0 = np.ones(self.mu.shape[0])*(1/self.mu.shape[0])
