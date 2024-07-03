@@ -254,6 +254,36 @@ def famafrench_regression_analysis(asset_type, factor_combinations=FACTOR_COMBIN
     b) Plots rolling estimates of correlationss between residuals and factors
     c) Plots rolling estimates of factors
     d) Plots histograms of factors grouped into three different time periods
+    e) Plots partial regression plots
+    f) Computes adjusted R-squared 
+    g) Estimate factor loadings
+
+    Parameters
+    -----------
+    asset_type: str
+        Equity Type (stocks, funds, etc)
+    
+    factor_combinations: List[List[str]]
+        List of factor combinations used in regression analysis
+
+    rf_col: str
+        Historical Risk-Free Rate data
+    
+    window: int
+        Rolling window period
+    
+    rolling: bool
+        Flag to perform rolling OLS or ordinary OLS
+    
+    
+
+    Returns
+    ---------
+    ff_asset_rsq: pd.DataFrame
+        Adjusted R-squared values for every factor combination
+    
+    ff_asset_params: Dict[str, pd.DataFrame]
+        Parameter estimates from regression analysis for every factor combination
     """
 
     ff_data, _, _, asset_returns, _ = get_data(asset_tickers=ASSET_TICKERS[asset_type], market_ticker=MARKET_TICKER, asset_type=asset_type)
@@ -304,7 +334,6 @@ def famafrench_regression_analysis(asset_type, factor_combinations=FACTOR_COMBIN
 
 
         ff_asset_rsq = pd.concat([ff_asset_rsq, df_asset_rsq], axis=1)
-        # ff_asset_params = pd.concat([ff_asset_params, df_asset_params], axis=1)
 
     return ff_asset_rsq if rolling else ff_asset_params
 
