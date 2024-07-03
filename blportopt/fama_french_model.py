@@ -35,8 +35,8 @@ class FamaFrenchModel:
     Parameters
     ----------
 
-    stock : str
-        Stock Ticker Symbol
+    asset : str
+        Asset Ticker Symbol
 
     factors : List[str]
         List of Fama-French Factors 
