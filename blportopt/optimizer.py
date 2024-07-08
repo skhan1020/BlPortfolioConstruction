@@ -6,28 +6,55 @@ import scipy.optimize as opt
 
 class PortoflioOptimizer:
     """
-    Optimize the Mean-Variance objective function subject to the constraint given by the Budget Equation:
+    General class to optimize portfolios based on Mean-Variance Optimization across a range of target returns 
+    subject to the budget constraint. Initial weights are given equal to the inverse of the number of assets in the portfolio
+    
+    Different Types of Objective Functions - 
 
-    w' * cov * w - mu' * w; 
+    a) Volatility :
+
+    w' * cov * w; 
 
     s.t. w' * I = 1
+         w' * mu = tr
 
     where   w - Weights of Portfolio
             cov - Covariance Matrix obtained from Annual Historical Returns of Portfolio
             mu - Annualized Historical Returns of Portfolio
+            tr - Target Return
+            I - Identity Vector
+            w' is the transposed vector of w
+
+
+    b) Risk Adjusted Returns :
+
+    w' * cov * w - mu' * w; 
+
+    s.t. w' * I = 1
+         w' * mu = tr
+
+    where   w - Weights of Portfolio
+            cov - Covariance Matrix obtained from Annual Historical Returns of Portfolio
+            mu - Annualized Historical Returns of Portfolio
+            tr - Target Return
+            I - Identity Vector
             w', mu' are the transposed vectors of w, mu respectively
     
-    Optimize the Max Sharpe Ratio objective function subject to the constraint given by the Budget Equation:
+    
+
+    c) Sharpe Ratio :
 
     (w' * mu - rf) / sqrt(w' * cov * w)
 
     s.t. w' * I = 1
+         w' * mu = tr
 
     where   w - Weights of Portfolio
             cov - Covariance Matrix obtained from Annual Historical Returns of Portfolio
             mu - Annualized Historical Returns of Portfolio
             rf - Annualized Risk Free Returns
-            w' is the transposed vector of w
+            tr - Target Return
+            w', mu' are the transposed vectors of w, mu respectively
 
     """
     def __init__(self, mu, cov, tr, rf, risk_aversion):
