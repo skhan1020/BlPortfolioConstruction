@@ -44,7 +44,7 @@ class FamaFrenchModel:
     model_config : FFModelConfig
         Object to configure Fama-French Factor Model hyperparameters
     """
-    def __init__(self, asset, model_config):
+    def __init__(self, asset, model_config=FFModelConfig):
         self.asset = asset
         self.factors = model_config.factors
         self.factor_combinations = "_".join([x for x in self.factors])

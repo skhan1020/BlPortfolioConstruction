@@ -48,6 +48,7 @@ MARKET_TICKER = "SPY"
 # Equity Start/Stop Dates
 EQ_START_DATE = "1963-07-01"
 EQ_END_DATE = "2023-12-01"
+EQ_CURRENT_DATE = "2024-07-01"
 
 # Equity Price Intervals
 INTERVAL = '1mo' 

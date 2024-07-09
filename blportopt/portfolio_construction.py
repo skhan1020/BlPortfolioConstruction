@@ -1,80 +1,43 @@
 import numpy as np
 import pandas as pd
 from blportopt.config import (
+    ASSET_TICKERS,
     RF_COL,
-    FF_FILENAMES,
 )
-from blportopt.data_utils import (
-    FamaFrenchFactorDataLoader,
-    EquityDataLoader,
-)
+from blportopt.covariance_estimator import portfolio_data
 from blportopt.optimizer import PortoflioOptimizer
 
-def portfolio_data(tickers, freq=12):
+
+
+def empirical_rf_calculate(asset_type, freq=12):
     """
     Determine Excess Asset Returns (Historical), Standard Deviation, Covariance Matrix and Risk-Free Rates for all equities
 
     Parameters
     ----------
 
-    tickers : List[str]
-        List of assets (ticker symbols)
-    
+    asset_type : str
+        Type of asset (fund/stock)
+        
     freq : int
         Frequency of returns
     
     Returns
     -------
-    
-    freq_returns : pd.Series
-        Average excess annual returns of assets within portfolio
-    
-    freq_stdev : pd.Series
-        Std. Dev of excess annual returns of assets within portfolio
-    
-    cov : pd.DataFrame
-        Covariance Matrix
-    
+
     freq_rf : float
         Average risk-free rate from historical 'RF' data
 
     """
-    print("-" * 50 + "Loading Time Series of Factors" + "-" * 50)
-    famafrenchfactor = FamaFrenchFactorDataLoader()
-    
-    # Extract Fama-French (6) Factors data downloaded from library
-    ff_data = famafrenchfactor.get_factor_data(filenames=FF_FILENAMES)
-    ff_data = ff_data / 100
-
-    # Extract Close Prices of each Asset (Fund/Stock)
-    asset_data_obj = EquityDataLoader(tickers=tickers)
-    asset_close_data = asset_data_obj.get_history(price_type="Close")
-
-    # Monthly Returns on Individual Assets (Funds/Stocks)
-    asset_returns = asset_data_obj.get_returns(data=asset_close_data)
-
-    asset_rf_data = pd.merge(asset_returns, ff_data[RF_COL], how="inner", left_index=True, right_index=True)
-
-    # Determine Excess Stock Returns ( Subtract Risk Free Returns to Calculate Risk Premia Associated with Each Stock )
-    for asset in tickers:
-        asset_rf_data[asset] = asset_rf_data[asset] - asset_rf_data[RF_COL]
-
-    # asset_rf_data.drop(columns=[RF_COL], inplace=True)
-    asset_rf_data.reset_index(inplace=True)
-    asset_rf_data["Year"] = asset_rf_data["Date"].dt.year.astype(str)
 
     # --------- Compute Annual Returns, Covariance Matrix based on frequency of historical returns ------------ #
-    asset_returns = asset_rf_data[tickers]
+    asset_rf_data = portfolio_data(tickers=ASSET_TICKERS[asset_type])
     rf = asset_rf_data[RF_COL]
 
-
-    freq_returns = asset_returns.mean() * freq
-    freq_stdev = asset_returns.std() * np.sqrt(freq)
-    cov = asset_returns.cov() * freq
+    print("-" * 50 + "Computing Average Risk-Free Returns of Assets" + "-" * 50)
     freq_rf = rf.mean() * freq
 
-
-    return freq_returns, freq_stdev, cov, freq_rf
+    return freq_rf
 
 
 def calc_optimal_portfolio_weights(mu, cov, rf, tr, risk_aversion, method):

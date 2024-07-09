@@ -178,7 +178,7 @@ class FamaFrenchFactorDataLoader:
         return factor_data
 
 
-def get_data(asset_tickers, market_ticker, asset_type="stock"):
+def get_data(asset_tickers, market_ticker, start=EQ_START_DATE, end=EQ_END_DATE, asset_type="stock"):
     """
     Function to collect Factor and Equity Data
 
@@ -190,6 +190,12 @@ def get_data(asset_tickers, market_ticker, asset_type="stock"):
     
     market_ticker : str
         Benchmark market index for comparing portfolio performance
+
+    start : str
+        Earliest date for asset historical prices (open, close, high, low) 
+    
+    end : str
+        Latest date for asset historical prices (open, close, high, low)
 
     asset_type : str
         Type of Asset (Stocks, Funds etc)
@@ -224,7 +230,7 @@ def get_data(asset_tickers, market_ticker, asset_type="stock"):
     print("-" * 50 + f"Loading Historical Prices of {len(ASSET_TICKERS[asset_type])} Equities (Stocks/Funds)" + "-" * 50)
 
     # Extract Open/Close Prices of each Asset
-    asset_data_obj = EquityDataLoader(tickers=asset_tickers)
+    asset_data_obj = EquityDataLoader(tickers=asset_tickers, start=start, end=end)
 
     # Open Prices of Assets (Monthly)
     asset_open_data = asset_data_obj.get_history(price_type="Open")
