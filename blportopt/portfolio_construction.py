@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from blportopt.config import (
     ASSET_TICKERS,
     RF_COL,
@@ -80,7 +81,7 @@ def calc_optimal_portfolio_weights(mu, cov, rf, tr, risk_aversion, method):
 
 
 
-def efficient_frontier(mu, cov, rf, risk_aversion):
+def efficient_frontier(mu, cov, rf, risk_aversion, method="volatility"):
     """
     Constructing Efficient Frontier by optimizing portfolios across a range of target returns
 
@@ -99,6 +100,9 @@ def efficient_frontier(mu, cov, rf, risk_aversion):
     risk_aversion : float
         Investor risk appetite
     
+    method: str
+        Objective function to optimize
+    
     Returns
     -------
 
@@ -106,13 +110,14 @@ def efficient_frontier(mu, cov, rf, risk_aversion):
         Pandas dataframe with target returns, computed target volatilites from optimization process, and target sharpe ratios
 
     """
-    target_returns = np.linspace(mu.min(), mu.sum(), 100)
+    target_returns = np.linspace(mu.min(), mu.max(), 100)
     tvols = []
     for tr in target_returns:
         
         port_optim = PortoflioOptimizer(mu=mu, cov=cov, tr=tr, rf=rf, risk_aversion=risk_aversion)
         
-        opt_ef = port_optim.optimize(method="volatility")
+        opt_ef = port_optim.optimize(method=method)
+
         tvols.append(opt_ef["fun"])
 
 
@@ -127,3 +132,16 @@ def efficient_frontier(mu, cov, rf, risk_aversion):
     )
 
     return efport
+
+def plot_efficient_frontier(efport_dict):
+
+    plt.figure(figsize=(8,8))
+    for item, efport in efport_dict.items():
+        plt.scatter(efport["targetvols"], efport["targetrets"], label=item)
+        maxSR_index = efport["targetsharpe"].argmax()
+        plt.scatter(efport.loc[maxSR_index, ["targetvols"]], efport.loc[maxSR_index, ["targetrets"]], color='g', s=300, marker="*")
+    plt.xlabel(r"Expected Volatilities ($\sigma$)")
+    plt.ylabel(r"Expected Returns ($r$)")
+    plt.grid(True)
+    plt.legend(loc='best')
+    plt.show()

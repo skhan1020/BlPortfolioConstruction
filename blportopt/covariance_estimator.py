@@ -4,7 +4,6 @@ from blportopt.config import (
     ASSET_TICKERS,
     EQ_START_DATE,
     EQ_END_DATE,
-    EQ_CURRENT_DATE,
     RF_COL,
     FF_FACTORS,
     MARKET_TICKER,
@@ -119,19 +118,16 @@ def factor_cov_calculate(asset_type, freq=12):
     print("-" * 50 + "Computing Covariance Matrix based on Factor Loadings" + "-" * 50)
 
 
-    # Train Data -- Factor Data (X), Asset Returns (y_train)
-    ff_data_train, _, _, asset_returns_train, _ = get_data(asset_tickers=ASSET_TICKERS[asset_type], market_ticker=MARKET_TICKER, asset_type=asset_type)
+    # Train Fama-French Factor Model -- Factor Data (X), Asset Returns (y_train)
+    ff_data, _, _, asset_returns, _ = get_data(asset_tickers=ASSET_TICKERS[asset_type], market_ticker=MARKET_TICKER, asset_type=asset_type)
     
-    # Test Data -- Asset Returns (y_test)
-    _, _, _, asset_returns_test, _ = get_data(asset_tickers=ASSET_TICKERS[asset_type], market_ticker=MARKET_TICKER, asset_type=asset_type, start=EQ_END_DATE, end=EQ_CURRENT_DATE)
-    
-    # Setting Indexes of factor & asset test data 
-    ff_data_test = pd.merge(ff_data_train, asset_returns_test, how="inner", left_index=True, right_index=True)
-    ff_data_test = ff_data_test[FF_FACTORS]
-    df_const = pd.DataFrame(data=[1]*len(ff_data_test), columns=['const'], index=ff_data_test.index.tolist())
-    ff_data_test = pd.concat([df_const, ff_data_test], axis=1)
-    
-    asset_returns = pd.DataFrame()
+    factor_data = ff_data[FF_FACTORS]
+    alpha_coeff = pd.DataFrame(data=[1]*len(ff_data), columns=['const'], index=ff_data.index.tolist())
+    factor_data = pd.concat([alpha_coeff, factor_data], axis=1)
+    X = factor_data.to_numpy()
+
+
+    computed_asset_returns = pd.DataFrame()
     
 
     for asset in ASSET_TICKERS[asset_type]:
@@ -140,25 +136,21 @@ def factor_cov_calculate(asset_type, freq=12):
         model = FamaFrenchModel(asset=asset)
         
         # Fitting of model
-        model.fit(asset_data=asset_returns_train, ff_data=ff_data_train)
+        model.fit(asset_data=asset_returns, ff_data=ff_data)
 
         # Compute Factor Loadings
         factor_loadings = model.params.mean().to_numpy()
-
-        X = ff_data_test.to_numpy()
 
         print("-" * 30 + f"Asset returns Computed for Asset {asset}" + "-" * 30)
 
         factor_returns = pd.DataFrame(data=X @ factor_loadings)
         factor_returns.columns = [asset]
 
-        asset_returns = pd.concat([asset_returns, factor_returns], axis=1)
+        computed_asset_returns = pd.concat([computed_asset_returns, factor_returns], axis=1)
 
     mu_f = asset_returns.mean() * freq
     cov_f = asset_returns.cov() * freq
 
     return mu_f, cov_f
-
-
 
         
