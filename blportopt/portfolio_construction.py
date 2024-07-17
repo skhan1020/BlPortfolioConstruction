@@ -118,7 +118,8 @@ def efficient_frontier(mu, cov, rf, risk_aversion, method="volatility"):
         
         opt_ef = port_optim.optimize(method=method)
 
-        tvols.append(opt_ef["fun"])
+        # Compute Volatiity
+        tvols.append(port_optim.volatility(w=opt_ef["x"]))
 
 
     target_volatilities = np.array(tvols)
