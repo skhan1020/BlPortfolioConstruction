@@ -388,6 +388,50 @@ class EarningsReportLoader:
         return df_quarterly1        
 
 
+class MarketCapEvaluator:
+    
+    def __init__(self, tickers):
+        self.tickers = tickers
+
+    def compute_market_cap(self):
+
+        market_val_dict = dict()
+        for ticker in self.tickers:
+            yf_ticker = yf.Ticker(ticker)
+            all_dates = yf_ticker.quarterly_income_stmt.columns
+            total_shares_dict = dict()
+
+            # Retrieve Outstanding Shares (Historical) for every Company
+            for date in all_dates:
+                total_shares = yf_ticker.quarterly_income_stmt[date]['Basic Average Shares']
+                total_shares_dict.update({date: total_shares})
+
+            shares_df = pd.DataFrame(total_shares_dict.items(), columns=["Date", "Shares"])
+            shares_df["Date"] = pd.to_datetime(shares_df["Date"], utc=True)
+            shares_df["Y"] = shares_df["Date"].dt.year
+            shares_df["M"] = shares_df["Date"].dt.month
+            shares_df1 = shares_df.groupby(["Y", "M"])["Shares"].mean().reset_index().dropna()
+
+            # Retrieve 'Close' Prices of every asset
+            asset_price = yf_ticker.history(start='2022-12-31', end='2024-03-31')
+            asset_price = asset_price[["Close"]].reset_index()
+            asset_price["Date"] = pd.to_datetime(asset_price["Date"], utc=True)
+            asset_price["Y"] = asset_price["Date"].dt.year
+            asset_price["M"] = asset_price["Date"].dt.month
+            asset_price1 = asset_price.groupby(["Y", "M"])["Close"].mean().reset_index()
+
+            asset_price_share = pd.merge(asset_price1, shares_df1, how="inner", on=["Y", "M"])
+            asset_price_share["Market Val"] = asset_price_share["Shares"] * asset_price_share["Close"]
+            asset_market_val = asset_price_share["Market Val"].mean()
+            market_val_dict.update({ticker: asset_market_val})
+
+        # Compute Market Capitalization of each Asset
+        total_market_val = sum(v for k, v in market_val_dict.items())
+        market_val_dict = {k: v/total_market_val for k, v in market_val_dict.items()}
+        
+        return market_val_dict
+
+
 if __name__ == "__main__":
 
     ff_data, stock_open_data, stock_close_data, stock_returns, market_returns = get_data(asset_tickers=STOCK_TICKERS, market_ticker=MARKET_TICKER, asset_type="stock")
