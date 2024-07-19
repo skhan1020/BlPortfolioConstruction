@@ -69,15 +69,17 @@ def calc_optimal_portfolio_weights(mu, cov, rf, tr, risk_aversion, method):
     Returns
     -------
 
-    optimal_weights : np.array
-        Array of optimal portoflio allocations
+    optimal_weights_dict : dict
+        Dictionary of assets and corresponding optimal portoflio allocations
     """
 
     port_optim = PortoflioOptimizer(mu=mu, cov=cov, tr=tr, rf=rf, risk_aversion=risk_aversion)
         
     optimal_weights = port_optim.optimize(method=method)['x']
 
-    return optimal_weights
+    optimal_weights_dict = dict(zip(list(mu.keys()), optimal_weights))
+
+    return optimal_weights_dict
 
 
 

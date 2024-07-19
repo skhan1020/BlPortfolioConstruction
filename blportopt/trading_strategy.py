@@ -14,8 +14,10 @@ from blportopt.config import (
     TOPN,
     FIGURES_DIR,
 )
-
-from blportopt.data_utils import get_data
+from blportopt.data_utils import (
+    get_data,
+    MarketCapEvaluator,
+)
 from blportopt.fama_french_model import (
     FFModelConfig,
     FamaFrenchModel,
@@ -144,6 +146,9 @@ class AlphaTradingStrategy:
     asset_type : str
         Equity type (stocks/funds)
 
+    allocations : Dict[str, float]
+        Dictionary of asset allocations {Asset : Allocation}
+
     factors : List[str]
         List of factors used in Fama-French model
     
@@ -172,7 +177,7 @@ class AlphaTradingStrategy:
         Benchmark market index ticker (eg SPY)
 
     """
-    def __init__(self, asset_type, factors, ff_data, open_df, close_df, asset_returns, market_returns, initial_capital=INITIAL_CAPITAL, topn=TOPN, market_ticker=MARKET_TICKER):
+    def __init__(self, asset_type, allocations, factors, ff_data, open_df, close_df, asset_returns, market_returns, initial_capital=INITIAL_CAPITAL, topn=TOPN, market_ticker=MARKET_TICKER):
 
         self.factors = factors
         self.initial_capital = initial_capital
@@ -191,6 +196,8 @@ class AlphaTradingStrategy:
         self.open_df.index = list(range(len(self.open_df)))
         self.close_df.index = list(range(len(self.close_df)))
         
+        for asset, wt in allocations.items():
+            self.close_df[asset], self.open_df[asset] = self.close_df[asset]*wt, self.open_df[asset]*wt
 
     def holding_tickers(self):
         """
@@ -376,13 +383,36 @@ class AlphaTradingStrategy:
         plt.show()
         
 
-# def backtest(factor_combinations, ALL=False):
-def backtest(factors, asset_type):
+def plot_cumulative_returns(signal_data_combined):
+    """
+    Plot of Cumulative Returns generated from multiple asset allocations : Market Cap, Empirical Covariance Estimate, Covariance from Multi-Factor Model
+
+    signal_data_combined : pd.DataFrame
+        Cumulative Returns generated from multiple asset allocations : Market Cap, Empirical Covariance Estimate, Covariance from Multi-Factor Model
+        
+    """
+
+
+    print("-" * 50 + "Plot of Portfolio Cumulative Returns" + "-" * 50)
+
+    signal_data_combined.plot(kind='line', figsize=(10, 10))
+    plt.xlabel('Date')
+    plt.ylabel('Cumulative Returns')
+    plt.title("MSR Performance : Portfolio Cumulative Returns")
+    plt.legend(loc='best')
+    plt.grid(True)
+    plt.savefig(os.path.join(FIGURES_DIR, f"MSR_Performance_Portfolios.png"))
+    plt.show()
+
+def backtest(allocations_dict, factors, asset_type):
     """
     Function to backtest Factor Based Strategy with Market Returns
     
     Parameters
     ----------
+
+    allocation_dict : Dict[str, Dict[str, float]]
+        Dictionary of asset allocations computed using different methods -- Market Cap, Empirical Covariance Matrix, Fama-French Covariance Matrix
 
     factors : List[str]
         List of factors used in the Fama-French Model to evaluate Alpha Trading Strategy
@@ -399,17 +429,19 @@ def backtest(factors, asset_type):
 
     ff_data, asset_open_data, asset_close_data, asset_returns, market_returns = get_data(asset_tickers=ASSET_TICKERS[asset_type], market_ticker=MARKET_TICKER, asset_type=asset_type)
 
-    performance_dict = dict()
+    performance_dict, signal_data_df = dict(), pd.DataFrame()
 
+    for method, allocations in allocations_dict.items():
 
-    alpha_trading_strat = AlphaTradingStrategy(asset_type=asset_type, factors=factors, ff_data=ff_data, open_df=asset_open_data, close_df=asset_close_data, asset_returns=asset_returns, market_returns=market_returns)
-    
-    signal_data = alpha_trading_strat.generate_signals()
-    alpha_trading_strat.plot_cumulative_returns(signal_data=signal_data)
+        alpha_trading_strat = AlphaTradingStrategy(asset_type=asset_type, allocations=allocations, factors=factors, ff_data=ff_data, open_df=asset_open_data, close_df=asset_close_data, asset_returns=asset_returns, market_returns=market_returns)
+        
+        signal_data = alpha_trading_strat.generate_signals()
+        signal_data_df = pd.concat([signal_data_df, signal_data[["Portfolio Cumulative Returns"]]], axis=1)
+        signal_data_df.rename(columns={"Portfolio Cumulative Returns": method}, inplace=True)    
+        performance = alpha_trading_strat.evalaute_strategy(signal_data=signal_data)
+        performance_dict.update({method: performance})
 
-    performance = alpha_trading_strat.evalaute_strategy(signal_data=signal_data)
-    key = '_'.join([x for x in factors])
-    performance_dict.update({key: performance})
+    plot_cumulative_returns(signal_data_combined=signal_data_df)
 
 
     return performance_dict
@@ -418,7 +450,17 @@ def backtest(factors, asset_type):
 
 if __name__ == "__main__":
 
+    asset_type = "stock"
+    
+    # Evaluate Market Capitalization of Assets
+    mcap_eval = MarketCapEvaluator(tickers=ASSET_TICKERS[asset_type])
+    market_cap_stocks = mcap_eval.compute_market_cap()
 
-    # Backtest Fama-French Factors against S&P 500 Market Index Returns
-    performance = backtest(factors=FF_FACTORS, asset_type="fund")
+    # Allocations Dictionary
+    allocations_dict = {
+        "Market Cap": market_cap_stocks,
+    }
+
+    # Estimate MSR Portfolio Performance from different asset allocations
+    performance = backtest(allocations_dict, factors=FF_FACTORS, asset_type=asset_type)
     print(performance)
