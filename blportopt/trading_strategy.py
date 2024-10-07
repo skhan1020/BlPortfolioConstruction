@@ -57,10 +57,12 @@ def get_alpha(asset_type, factors, asset_returns, ff_data, rf_col=RF_COL, window
     alpha_data : pd.DataFrame
         Alpha values of all stocks from Fama-French model
 
+    alpha_pvalues_data : pd.DataFrame
+        p-values associated with Alpha
+
     """
 
-
-    alpha_data = pd.DataFrame()
+    alpha_data, alpha_pvalues_data = pd.DataFrame(), pd.DataFrame()
 
     ff_model_config = FFModelConfig(rf_col=rf_col, window=window, rolling=rolling)
     ff_model_config.factors = factors
@@ -71,14 +73,21 @@ def get_alpha(asset_type, factors, asset_returns, ff_data, rf_col=RF_COL, window
 
         model = FamaFrenchModel(asset=asset, model_config=ff_model_config)
         model.fit(asset_data=asset_returns, ff_data=ff_data)
+    
         alpha_df = model.params[["const"]].dropna()
-        alpha_stock = pd.DataFrame(alpha_df)
-        alpha_stock.columns = [asset]
-        alpha_data = pd.concat([alpha_data, alpha_stock], axis=1)
+        alpha_pvalues_df = pd.DataFrame(model.pvalues)
+        alpha_pvalues_df = alpha_pvalues_df.loc[:, [0]].dropna()
+        alpha_pvalues_df.index = alpha_df.index
+        
+
+        alpha_df.columns, alpha_pvalues_df.columns = [asset], [asset]
+
+        alpha_data = pd.concat([alpha_data, alpha_df], axis=1)
+        alpha_pvalues_data = pd.concat([alpha_pvalues_data, alpha_pvalues_df], axis=1)
 
         print("-" * 50 + "Done!" + "-" * 50)
 
-    return alpha_data
+    return alpha_data, alpha_pvalues_data
 
 
 def determine_trading_days(alpha_df, open_df, close_df, market_df):
@@ -177,18 +186,33 @@ class AlphaTradingStrategy:
         Benchmark market index ticker (eg SPY)
 
     """
-    def __init__(self, asset_type, allocations, factors, ff_data, open_df, close_df, asset_returns, market_returns, initial_capital=INITIAL_CAPITAL, topn=TOPN, market_ticker=MARKET_TICKER):
+    def __init__(
+            self, 
+            asset_type, 
+            allocations, 
+            factors, 
+            ff_data, 
+            open_df, 
+            close_df, 
+            asset_returns, 
+            market_returns, 
+            initial_capital=INITIAL_CAPITAL, 
+            topn=TOPN, 
+            market_ticker=MARKET_TICKER
+        ):
 
         self.factors = factors
         self.initial_capital = initial_capital
         self.topn = topn
         self.market_ticker = market_ticker
 
-        alpha_df = get_alpha(asset_type=asset_type, factors=factors, asset_returns=asset_returns.copy(deep=True), ff_data=ff_data.copy(deep=True))
+        alpha_df, alpha_pvalues_df = get_alpha(asset_type=asset_type, factors=factors, asset_returns=asset_returns.copy(deep=True), ff_data=ff_data.copy(deep=True))
 
         self.alpha_trading_data, self.open_df, self.close_df, self.market_returns = determine_trading_days(alpha_df=alpha_df, open_df=open_df.copy(deep=True), close_df=close_df.copy(deep=True), market_df=market_returns.copy(deep=True))
+        self.alpha_pvalues_df = alpha_pvalues_df[alpha_pvalues_df.index.isin(self.alpha_trading_data.index)]
 
         self.alpha_trading_data.index = list(range(len(self.alpha_trading_data)))
+        self.alpha_pvalues_df.index = list(range(len(self.alpha_pvalues_df)))
 
         self.tickers = self.open_df.columns.tolist()
         self.trading_days = self.open_df.index
@@ -377,7 +401,7 @@ def plot_cumulative_returns(signal_data_combined):
     plt.savefig(os.path.join(FIGURES_DIR, f"MSR_Performance_Portfolios.png"))
     plt.show()
 
-def backtest(allocations_dict, factors, asset_type):
+def backtest(allocations_dict, factors, asset_type, topn=TOPN):
     """
     Function to backtest Factor Based Strategy with Market Returns
     
@@ -392,6 +416,9 @@ def backtest(allocations_dict, factors, asset_type):
 
     asset_type : str
         Equity type (stocks/funds)
+    
+    topn : int
+        Number of assets included in the estimation of portfolio performance
         
     Returns
     -------
@@ -406,7 +433,7 @@ def backtest(allocations_dict, factors, asset_type):
 
     for method, allocations in allocations_dict.items():
 
-        alpha_trading_strat = AlphaTradingStrategy(asset_type=asset_type, allocations=allocations, factors=factors, ff_data=ff_data, open_df=asset_open_data, close_df=asset_close_data, asset_returns=asset_returns, market_returns=market_returns)
+        alpha_trading_strat = AlphaTradingStrategy(asset_type=asset_type, allocations=allocations, factors=factors, ff_data=ff_data, open_df=asset_open_data, close_df=asset_close_data, asset_returns=asset_returns, market_returns=market_returns, topn=topn)
         
         signal_data = alpha_trading_strat.generate_signals()
         signal_data_df = pd.concat([signal_data_df, signal_data[["Portfolio Cumulative Returns"]]], axis=1)

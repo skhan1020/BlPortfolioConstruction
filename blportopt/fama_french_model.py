@@ -83,8 +83,20 @@ class FamaFrenchModel:
         
         print("-" * 50 + "Done!" + "-" * 50)
 
+        # rolling parameters
         self.params = self.fitted_model.params
+        #display(self.params)
+        
+        # p-values 
+        #model_pvalues = self.fitted_model.pvalues
+        self.pvalues = self.fitted_model.pvalues
+        #display(model_pvalues)
+        #self.pvalues = pd.DataFrame(data=model_pvalues, columns=self.params.columns.tolist(), index=self.params.index)
+
+        # Factors
         self.X = exog
+        
+        # Excess Returns
         self.y = endog
 
     def rolling_residuals(self):

@@ -1,11 +1,14 @@
 import numpy as np
 import pandas as pd
-from blportopt.config import EARNINGS_FIELDS
+from blportopt.config import (
+    ASSET_TICKERS, 
+    EARNINGS_FIELDS,
+)
 
 from blportopt.data_utils import (
     EarningsReportLoader, 
 )
-from blportopt.portfolio_construction_BL import annual_excess_asset_returns
+from blportopt.covariance_estimator import annual_excess_asset_returns
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 
@@ -138,7 +141,7 @@ def generate_returns(data, ticker):
     return avg_predictions
 
 
-def generate_positions(investor_views, historical_returns, tickers, from_file=True):
+def generate_positions(investor_views, historical_returns, asset_type, from_file=True):
     """
     Function to Generate the Position and Return Matrices for the Likelihood Function in BL model
 
@@ -152,12 +155,12 @@ def generate_positions(investor_views, historical_returns, tickers, from_file=Tr
             b) Relative View : Company 1 outperforms Company 2
     
     historical_returns : pd.Series
-        Average of historical returns of each quity within portfolio
+        Average of historical returns of each quity within portfolio : Empirical / Factor Model
 
 
-    tickers : List[str]
-        List of ticker symbols of equities included in portfolio
-
+    asset_type : str
+        Asset Type (stock, fund etc)
+    
     from_file : bool (default True)
         Load earnings report from saved pickle file if True else collect earnings report from Alpha Vantage API and store in pickle file
     
@@ -172,17 +175,17 @@ def generate_positions(investor_views, historical_returns, tickers, from_file=Tr
 
     """
     # Earnings Reports of All Assets in Portfolio
-    equity_earnings_obj = EarningsReportLoader(tickers=tickers, from_file=from_file)
+    equity_earnings_obj = EarningsReportLoader(tickers=ASSET_TICKERS[asset_type], from_file=from_file)
     
     # Quarterly Earnings Reports
     earnings_reports = equity_earnings_obj.get_earniings_history()
 
     # Excess Asset Returns (Historical)
-    annual_stock_returns_data = annual_excess_asset_returns(tickers=tickers)
-
+    # annual_stock_returns_data = annual_excess_asset_returns(source=source, asset_type=asset_type)
+    annual_stock_returns_data = annual_excess_asset_returns(tickers=ASSET_TICKERS[asset_type])
 
     ticker_predictions = dict()
-    for ticker in tickers:
+    for ticker in ASSET_TICKERS[asset_type]:
         
         # Earnings Report of chosen Equity
         ticker_earnings_reports = earnings_reports[earnings_reports["ticker"]==ticker]
