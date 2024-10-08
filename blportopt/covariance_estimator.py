@@ -167,26 +167,16 @@ def annual_excess_asset_returns(tickers, start=EQ_START_DATE, end=EQ_END_DATE):
     Returns
     -------
 
-    stock_rf_data1 : pd.DataFrame
+    asset_returns : pd.DataFrame
         Dataframe of excess annual returns of assets
     """
-    stock_rf_data = portfolio_data(tickers=tickers, start=start, end=end)
+    asset_rf_data = portfolio_data(tickers=tickers, start=start, end=end)
 
-    stock_rf_data.drop(columns=["RF"], inplace=True)
-    stock_rf_data.reset_index(inplace=True)
-    stock_rf_data["Year"] = stock_rf_data["Date"].dt.year.astype(str)
+    asset_rf_data.drop(columns=["RF"], inplace=True)
+    asset_rf_data.reset_index(inplace=True)
+    asset_rf_data["Year"] = asset_rf_data["Date"].dt.year.astype(str)
 
-    stock_rf_data1 = stock_rf_data.groupby(["Year"])[tickers].mean().reset_index()
-    stock_rf_data1.set_index("Year", inplace=True)
+    asset_returns = asset_rf_data.groupby(["Year"])[tickers].mean().reset_index()
+    asset_returns.set_index("Year", inplace=True)
     
-    return stock_rf_data1
-
-
-# def annual_excess_asset_returns(source, asset_type, freq=12):
-
-#     if source == "empirical":
-#         mu, _ = empirical_cov_calculate(asset_type=asset_type, freq=freq)
-#     elif source == "factor":
-#         mu, _ = factor_cov_calculate(asset_type=asset_type, freq=freq)
-
-#     return mu        
+    return asset_returns
