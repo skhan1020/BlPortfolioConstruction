@@ -1,16 +1,5 @@
 import numpy as np
 import pandas as pd
-from blportopt.config import (
-    ASSET_TICKERS, 
-    EARNINGS_FIELDS,
-)
-
-from blportopt.data_utils import (
-    EarningsReportLoader, 
-)
-from blportopt.covariance_estimator import annual_excess_asset_returns
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
 
 def get_dictionary_of_views(returns_dict):
     """
@@ -34,6 +23,9 @@ def get_dictionary_of_views(returns_dict):
     """
 
     absolute_view_dict, relative_view_dict = dict(), dict()
+
+    print("-" * 50 + "Constructing Absolute & Relative Investor Views!" + "-" * 50)
+
     for i in returns_dict:
         for j in returns_dict:
             if i != j:
@@ -43,10 +35,11 @@ def get_dictionary_of_views(returns_dict):
                 # Relative Views
                 relative_view_dict.update({str(i) + " outperforms " + str(j) : returns_dict[i] - returns_dict[j]})
     
+    print("-" * 50 + "Done!" + "-" * 50)
 
     return absolute_view_dict, relative_view_dict
 
-def compute_matrices(investor_views, returns_dict, historical_returns):
+def compute_matrices(investor_views, returns):
     """
     Computes position matrix and return vector based on investor views and expected asset predictions 
 
@@ -55,12 +48,9 @@ def compute_matrices(investor_views, returns_dict, historical_returns):
 
     investor_views : List[str]
         List of investor views used to upudate portfolio allocations
-    
-    returns_dict : dict
-        Expected predicted returns from earnings history
-    
-    historical_returns : pd.Series
-        Average historical returns of assets
+        
+    returns : pd.Series
+        Average empirical or factor model computed returns of assets
     
     Returns
     -------
@@ -72,13 +62,14 @@ def compute_matrices(investor_views, returns_dict, historical_returns):
 
     """
     # Obtain indices of every asset
-    ticker_idx_dict = {k: idx for idx, k in enumerate(historical_returns.to_dict())}
+    ticker_idx_dict = {k: idx for idx, k in enumerate(returns.to_dict())}
     
     # Compute absolute & relative views
-    absolute_view_dict, relative_view_dict = get_dictionary_of_views(returns_dict=returns_dict)
-
+    absolute_view_dict, relative_view_dict = get_dictionary_of_views(returns_dict=returns.to_dict())
+    
     # Initialize position matrix and return vector
-    P = np.zeros((len(investor_views), len(returns_dict)))
+    P = np.zeros((len(investor_views), len(returns)))
+
     Q = np.zeros((len(investor_views)))
 
     for idx, investor_view in enumerate(investor_views):
@@ -105,43 +96,7 @@ def compute_matrices(investor_views, returns_dict, historical_returns):
     
 
 
-def generate_returns(data, ticker):
-    """
-    Predict Future Average Returns from Earnings Reports using Regression Model
-
-    Parameters
-    ----------
-
-    ticker : str
-        Ticker symbol for the equity used in forecasting future returns based on prior earnings
-
-    Returns
-    -------
-
-    avg_predictions : float
-        expected future returns 
-
-    """
-    # Earnings Report - Input Features; Future Returns - Target
-    X, y = data[EARNINGS_FIELDS], data.loc[:, [ticker]].shift(-1)
-    X_train, X_test, y_train, _ = train_test_split(X, y, shuffle=False, test_size=0.2)
-    
-    # Linear Regression model
-    model = LinearRegression()
-
-    # Model Fitting
-    model.fit(X_train, y_train)
-    
-    # Model Predictions (Future Returns based on Earnings Reports)
-    predictions = model.predict(X_test)
-
-    # Average Future Returns
-    avg_predictions = predictions.mean()
-
-    return avg_predictions
-
-
-def generate_positions(investor_views, historical_returns, asset_type, from_file=True):
+def generate_positions(investor_views, returns):
     """
     Function to Generate the Position and Return Matrices for the Likelihood Function in BL model
 
@@ -154,15 +109,9 @@ def generate_positions(investor_views, historical_returns, asset_type, from_file
             a) Absolute View : Company 1 returns
             b) Relative View : Company 1 outperforms Company 2
     
-    historical_returns : pd.Series
+    returns : pd.Series
         Average of historical returns of each quity within portfolio : Empirical / Factor Model
 
-
-    asset_type : str
-        Asset Type (stock, fund etc)
-    
-    from_file : bool (default True)
-        Load earnings report from saved pickle file if True else collect earnings report from Alpha Vantage API and store in pickle file
     
     Returns
     -------
@@ -174,36 +123,9 @@ def generate_positions(investor_views, historical_returns, asset_type, from_file
         Expected returns (absolute or relative) associated with each view of the investor
 
     """
-    # Earnings Reports of All Assets in Portfolio
-    equity_earnings_obj = EarningsReportLoader(tickers=ASSET_TICKERS[asset_type], from_file=from_file)
-    
-    # Quarterly Earnings Reports
-    earnings_reports = equity_earnings_obj.get_earniings_history()
-
-    # Excess Asset Returns (Historical)
-    # annual_stock_returns_data = annual_excess_asset_returns(source=source, asset_type=asset_type)
-    annual_stock_returns_data = annual_excess_asset_returns(tickers=ASSET_TICKERS[asset_type])
-
-    ticker_predictions = dict()
-    for ticker in ASSET_TICKERS[asset_type]:
-        
-        # Earnings Report of chosen Equity
-        ticker_earnings_reports = earnings_reports[earnings_reports["ticker"]==ticker]
-        ticker_earnings_reports.drop(columns=["ticker"], inplace=True)
-        
-        # Historical Risk Premia of Equity
-        ticker_returns = annual_stock_returns_data.loc[:, [ticker]]
-        
-        # Combine Equity Earnings Reports (Features) with Excess Returns (Target)
-        ticker_df = pd.merge(ticker_earnings_reports, ticker_returns, how="inner", left_index=True, right_index=True)
-        ticker_df.sort_index(inplace=True)
-
-        # Future Returns based on Previous Month's Earnings Reports
-        avg_predictions = generate_returns(data=ticker_df, ticker=ticker)
-        ticker_predictions.update({ticker: avg_predictions})        
-
+ 
     # Generates Views    
-    position_matrix, return_vector = compute_matrices(investor_views=investor_views, returns_dict=ticker_predictions, historical_returns=historical_returns)
+    position_matrix, return_vector = compute_matrices(investor_views=investor_views, returns=returns)
 
     return position_matrix, return_vector    
         
